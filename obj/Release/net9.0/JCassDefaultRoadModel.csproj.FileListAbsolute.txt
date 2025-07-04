@@ -1,0 +1,16 @@
+C:\aa_git_repos\JCassDefaultRoadModel\bin\Release\net9.0\JCassDefaultRoadModel.deps.json
+C:\aa_git_repos\JCassDefaultRoadModel\bin\Release\net9.0\JCassDefaultRoadModel.dll
+C:\aa_git_repos\JCassDefaultRoadModel\bin\Release\net9.0\JCassDefaultRoadModel.pdb
+C:\aa_git_repos\JCassDefaultRoadModel\bin\Release\net9.0\JCass_Core.dll
+C:\aa_git_repos\JCassDefaultRoadModel\bin\Release\net9.0\JCass_Data.dll
+C:\aa_git_repos\JCassDefaultRoadModel\bin\Release\net9.0\JCass_ModelCore.dll
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\JCassDefaultRoadModel.csproj.AssemblyReference.cache
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\JCassDefaultRoadModel.GeneratedMSBuildEditorConfig.editorconfig
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\JCassDefaultRoadModel.AssemblyInfoInputs.cache
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\JCassDefaultRoadModel.AssemblyInfo.cs
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\JCassDefaultRoadModel.csproj.CoreCompileInputs.cache
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\JCassDef.F199D576.Up2Date
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\JCassDefaultRoadModel.dll
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\refint\JCassDefaultRoadModel.dll
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\JCassDefaultRoadModel.pdb
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Release\net9.0\ref\JCassDefaultRoadModel.dll
