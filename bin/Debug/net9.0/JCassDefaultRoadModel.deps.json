@@ -10,9 +10,7 @@
         "dependencies": {
           "JCass_Core": "1.0.0",
           "JCass_Functions": "1.0.0",
-          "JCass_Core.Reference": "1.0.0.0",
-          "JCass_Data.Reference": "1.0.0.0",
-          "JCass_ModelCore": "1.0.0.0"
+          "JCass_ModelCore": "1.0.0"
         },
         "runtime": {
           "JCassDefaultRoadModel.dll": {}
@@ -844,6 +842,50 @@
           }
         }
       },
+      "JCass_Core/1.0.0": {
+        "dependencies": {
+          "Azure.Storage.Blobs": "12.19.1",
+          "ConsoleTables": "2.4.2",
+          "DocumentFormat.OpenXml": "2.14.0",
+          "JCass_Data": "1.0.0",
+          "Newtonsoft.Json": "13.0.1",
+          "Serilog": "2.10.0",
+          "Serilog.Sinks.Console": "3.1.1",
+          "Serilog.Sinks.File": "4.1.0",
+          "SpreadsheetLight": "3.5.0",
+          "System.Data.SQLite.Core": "1.0.117"
+        },
+        "runtime": {
+          "JCass_Core.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "JCass_Data/1.0.0": {
+        "dependencies": {
+          "CSVFile": "3.1.1",
+          "NPOI": "2.6.0",
+          "System.Management": "8.0.0"
+        },
+        "runtime": {
+          "JCass_Data.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "JCass_Economics/1.0.0": {
+        "dependencies": {
+          "JCass_Core": "1.0.0"
+        },
+        "runtime": {
+          "JCass_Economics.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
       "JCass_Functions/1.0.0": {
         "dependencies": {
           "JCass_Core": "1.0.0",
@@ -860,27 +902,27 @@
           }
         }
       },
-      "JCass_Core.Reference/1.0.0.0": {
-        "runtime": {
-          "JCass_Core.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
-      },
-      "JCass_Data.Reference/1.0.0.0": {
-        "runtime": {
-          "JCass_Data.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
-      },
-      "JCass_ModelCore/1.0.0.0": {
+      "JCass_ModelCore/1.0.0": {
+        "dependencies": {
+          "CSVFile": "3.1.1",
+          "JCass_Economics": "1.0.0",
+          "JCass_Functions": "1.0.0",
+          "Microsoft.ML": "3.0.1",
+          "Microsoft.ML.FastTree": "3.0.1",
+          "Microsoft.ML.LightGbm": "3.0.1"
+        },
         "runtime": {
           "JCass_ModelCore.dll": {
             "assemblyVersion": "1.0.0.0",
             "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "SpreadsheetGear2017.Core/8.0.63.102": {
+        "runtime": {
+          "SpreadsheetGear2017.Core.dll": {
+            "assemblyVersion": "8.0.63.102",
+            "fileVersion": "8.0.63.102"
           }
         }
       }
@@ -1438,22 +1480,32 @@
       "path": "system.windows.extensions/6.0.0",
       "hashPath": "system.windows.extensions.6.0.0.nupkg.sha512"
     },
+    "JCass_Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "JCass_Data/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "JCass_Economics/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
     "JCass_Functions/1.0.0": {
       "type": "project",
       "serviceable": false,
       "sha512": ""
     },
-    "JCass_Core.Reference/1.0.0.0": {
-      "type": "reference",
+    "JCass_ModelCore/1.0.0": {
+      "type": "project",
       "serviceable": false,
       "sha512": ""
     },
-    "JCass_Data.Reference/1.0.0.0": {
-      "type": "reference",
-      "serviceable": false,
-      "sha512": ""
-    },
-    "JCass_ModelCore/1.0.0.0": {
+    "SpreadsheetGear2017.Core/8.0.63.102": {
       "type": "reference",
       "serviceable": false,
       "sha512": ""

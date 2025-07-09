@@ -34,7 +34,7 @@ public class RoadNetworkModel : DomainModelBase
         {
             _initialiser = new Initialiser(this.model, this);
             this.Constants = new GeneralConstants(this.model.Lookups);
-
+                        
             foreach (var row in rawData)
             {
                 RoadSegment seg = RoadSegmentFactory.GetFromRawData(this.model, row, this.LookupUtil);

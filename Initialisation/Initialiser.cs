@@ -34,7 +34,9 @@ public class Initialiser
 
         segment.AverageDailyTraffic = Math.Max(1, segment.AverageDailyTraffic); // Ensure ADT is at least 1
         segment.PavementAge = GetPavementAge(segment); // Calculate pavement age
-        segment.SurfacingAge = GetSurfacingAge(segment); // Calculate surfacing age
+        segment.SurfaceAge = GetSurfacingAge(segment); // Calculate surfacing age
+
+        segment.RutParameterValue = GetInitialRuttingValue(segment); // Calculate initial rutting value
 
         return segment;
     }
@@ -66,11 +68,8 @@ public class Initialiser
         paramValues["para_surf_func"] = segment.SurfaceFunction;
         paramValues["para_surf_layers"] = segment.SurfaceNumberOfLayers;
         paramValues["para_surf_thick"] = segment.SurfaceThickness;
-        paramValues["para_surf_age"] = segment.SurfacingAge;
+        paramValues["para_surf_age"] = segment.SurfaceAge;
         paramValues["para_surf_exp_life"] = segment.SurfaceExpectedLife;
-
-
-
 
         return paramValues;
     }
@@ -110,6 +109,63 @@ public class Initialiser
         {
             throw new Exception($"Error calculating surfacing age for segment {segment.FeebackCode}: {ex.Message}");
         }
+    }
+
+    private double GetHighSpeedSurveyAge(RoadSegment segment)
+    {
+        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.HsdSurveyDateString);
+        double age = (_domainModel.Constants.BaseDate - surveyDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
+        if (age < 0)
+        {
+            _frameworkModel.LogMessage($"HSD Survey date for segment {segment.FeebackCode} is in the future", false);
+        }
+        return age;
+    }
+
+    /// <summary>
+    /// Get the initial rutting value, taking into account the HSD survey age and the Surfacing and Pavement ages. There are
+    /// three possibilities:
+    /// <para>1. The HSD survey is older than the Pavement Age: In this case we presume the segment has been rehabilitated
+    /// after the survey and return the value in lookup set 'rehab_resets_rut' mapping to the segment's RoadType</para>
+    /// <para>2. The HSD survey is not older than the Pavement Age but older than Surface Age: In this case we presume the 
+    /// segment has been resurfaced after the survey and calculate the resetted value based on how much the raw rutting value 
+    /// (calculated as the maximum of the LWP and RWP 85th percentile rut values) exceeds the reset exceedance threshold, and 
+    /// return the resetted value using a formula</para>
+    ///</para>
+    /// <para>3. The HSD survey is not older than the Pavement Age or the Surface age - return the maximum of the LWP and RWP 85th percentile ruts    
+    ///</para>
+    /// </summary>
+    /// <param name="segment"></param>
+    /// <returns></returns>
+    private double GetInitialRuttingValue(RoadSegment segment)
+    {
+        double surveyAge = GetHighSpeedSurveyAge(segment);
+
+        // If segment has been rehabilitated, return the lookup value for the rutting reset
+        bool hasBeenRehabilitated = segment.PavementAge < surveyAge;
+        if (hasBeenRehabilitated) {
+            return _domainModel.GetLookupValueNumber("rehab_resets_rut", segment.RoadType);
+        }
+
+        double ruttingRaw = Math.Max(segment.RutLwpMean85, segment.RutRwpMean85);
+
+        // If segment has been resurfaced, determine the rutting exceedance and the reset
+        bool hasBeenResurfaced = segment.SurfaceAge < surveyAge;
+        if (hasBeenResurfaced)
+        {
+            double resetExceedenceThreshold = _domainModel.GetLookupValueNumber("reset_exceed_thresh_rut", segment.RoadType);
+            double resetImprovementFactor = _domainModel.GetLookupValueNumber("reset_perc_improv_facts_rut ", segment.RoadType);
+            
+            double ruttingResetExceedence = 0;
+            if (ruttingRaw > resetExceedenceThreshold) {ruttingResetExceedence = resetExceedenceThreshold - ruttingRaw; }
+
+            double resetValue = ruttingRaw + ruttingResetExceedence * resetImprovementFactor;
+
+        }
+
+        // If segment has not been rehabilitated or resurfaced, use the raw rutting value
+        return ruttingRaw;
+
     }
 
 }

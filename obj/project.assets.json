@@ -1458,6 +1458,19 @@
           "bin/placeholder/JCass_Data.dll": {}
         }
       },
+      "JCass_Economics/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "JCass_Core": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/JCass_Economics.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/JCass_Economics.dll": {}
+        }
+      },
       "JCass_Functions/1.0.0": {
         "type": "project",
         "framework": ".NETCoreApp,Version=v9.0",
@@ -1474,6 +1487,24 @@
         },
         "runtime": {
           "bin/placeholder/JCass_Functions.dll": {}
+        }
+      },
+      "JCass_ModelCore/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "CSVFile": "3.1.1",
+          "JCass_Economics": "1.0.0",
+          "JCass_Functions": "1.0.0",
+          "Microsoft.ML": "3.0.1",
+          "Microsoft.ML.FastTree": "3.0.1",
+          "Microsoft.ML.LightGbm": "3.0.1"
+        },
+        "compile": {
+          "bin/placeholder/JCass_ModelCore.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/JCass_ModelCore.dll": {}
         }
       }
     }
@@ -4165,16 +4196,27 @@
       "path": "../../Users/fritz/source/repos/jcass_main/JCass_Data/JCass_Data.csproj",
       "msbuildProject": "../../Users/fritz/source/repos/jcass_main/JCass_Data/JCass_Data.csproj"
     },
+    "JCass_Economics/1.0.0": {
+      "type": "project",
+      "path": "../../Users/fritz/source/repos/jcass_main/JCass_Economics/JCass_Economics.csproj",
+      "msbuildProject": "../../Users/fritz/source/repos/jcass_main/JCass_Economics/JCass_Economics.csproj"
+    },
     "JCass_Functions/1.0.0": {
       "type": "project",
       "path": "../../Users/fritz/source/repos/jcass_jfunctions_project/JCass_Functions/JCass_Functions.csproj",
       "msbuildProject": "../../Users/fritz/source/repos/jcass_jfunctions_project/JCass_Functions/JCass_Functions.csproj"
+    },
+    "JCass_ModelCore/1.0.0": {
+      "type": "project",
+      "path": "../../Users/fritz/source/repos/jcass_main/JCass_ModelCore/JCass_ModelCore.csproj",
+      "msbuildProject": "../../Users/fritz/source/repos/jcass_main/JCass_ModelCore/JCass_ModelCore.csproj"
     }
   },
   "projectFileDependencyGroups": {
     "net9.0": [
       "JCass_Core >= 1.0.0",
-      "JCass_Functions >= 1.0.0"
+      "JCass_Functions >= 1.0.0",
+      "JCass_ModelCore >= 1.0.0"
     ]
   },
   "packageFolders": {
@@ -4215,6 +4257,9 @@
             },
             "C:\\Users\\fritz\\source\\repos\\jcass_main\\JCass_Core\\JCass_Core.csproj": {
               "projectPath": "C:\\Users\\fritz\\source\\repos\\jcass_main\\JCass_Core\\JCass_Core.csproj"
+            },
+            "C:\\Users\\fritz\\source\\repos\\jcass_main\\JCass_ModelCore\\JCass_ModelCore.csproj": {
+              "projectPath": "C:\\Users\\fritz\\source\\repos\\jcass_main\\JCass_ModelCore\\JCass_ModelCore.csproj"
             }
           }
         }

@@ -83,7 +83,7 @@ public static class RoadSegmentFactory
         // Roughness and rutting
         segment.RoughnessSurveyDate = model.GetRawData_Text(rawRow, "file_roughsegment_date");
         segment.Naasra85 = model.GetRawData_Number(rawRow, "file_naasra_85");
-        segment.HsdSurveyDate = model.GetRawData_Text(rawRow, "file_hsd_date");
+        segment.HsdSurveyDateString = model.GetRawData_Text(rawRow, "file_hsd_date");
         segment.RutLwpMean85 = model.GetRawData_Number(rawRow, "file_rut_lwpmean_85");
         segment.RutRwpMean85 = model.GetRawData_Number(rawRow, "file_rut_rwpmean_85");
 

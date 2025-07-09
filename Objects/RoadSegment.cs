@@ -178,7 +178,7 @@ public class RoadSegment
     /// <summary>
     /// Surfacing date in fractional years, calculated from the SurfacingDateString during Initialisation.
     /// </summary>
-    public double SurfacingAge { get; set; }
+    public double SurfaceAge { get; set; }
 
     /// <summary>
     /// Surface function.
@@ -393,19 +393,26 @@ public class RoadSegment
     public double Naasra85 { get; set; }
 
     /// <summary>
-    /// HSD survey date in dd/mm/yyyy format.
+    /// HSD survey date as a string in dd/mm/yyyy format. Do not use this
+    /// after initialitation - use the RutParameterValue property instead.
     /// </summary>
-    public string HsdSurveyDate { get; set; }
+    public string HsdSurveyDateString { get; set; }
 
     /// <summary>
-    /// LWP mean rut 85th percentile.
+    /// LWP mean rut 85th percentile from raw input values. Do not use this 
+    /// after initialisation - use the RutParameterValue property instead.
     /// </summary>
     public double RutLwpMean85 { get; set; }
 
     /// <summary>
-    /// RWP mean rut 85th percentile.
+    /// RWP mean rut 85th percentile from raw input values.
     /// </summary>
     public double RutRwpMean85 { get; set; }
+
+    /// <summary>
+    /// Rut parameter value calculated during initialisation and used to represent the rutting condition of the road segment.     
+    /// </summary>
+    public double RutParameterValue { get; set; }
 
     #endregion
 
