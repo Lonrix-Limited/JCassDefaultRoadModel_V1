@@ -7,6 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Users\fritz\source\repos\jcass_jfunctions_project\JCass_Functions\JCass_Functions.csproj" />
+    <ProjectReference Include="..\..\Users\fritz\source\repos\jcass_main\JCass_Core\JCass_Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="JCass_Core">
       <HintPath>References\JCass_Core.dll</HintPath>
     </Reference>
@@ -17,5 +22,10 @@
       <HintPath>References\JCass_ModelCore.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+	<Target Name="CustomCopyDll" AfterTargets="Build">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\zz_trash\default_roadmodel\cassandra\domain_model\" SkipUnchangedFiles="true" />
+	</Target>
+
 
 </Project>

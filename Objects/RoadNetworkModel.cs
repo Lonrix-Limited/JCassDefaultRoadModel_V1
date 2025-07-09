@@ -5,16 +5,68 @@ using System.Text;
 using System.Threading.Tasks;
 using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Treatments;
+using JCassDefaultRoadModel.Initialisation;
+using JCassDefaultRoadModel.LookupObjects;
 
 namespace JCassDefaultRoadModel.Objects;
 
 public class RoadNetworkModel : DomainModelBase
 {
+    public GeneralConstants Constants { get; set; }
+    public LookupUtility LookupUtil { get; set; }
+
+    private Initialiser _initialiser { get; set; }
+
 
     public RoadNetworkModel()
     {
         //Nothing to do here. Note that property 'model' mapping to the ModelBase class (i.e. the Framework Model)
-        //will be automatically set up right after this default constructor is called.
+        //will be automatically set up right after this default constructor is called.        
+    }
+
+    /// <summary>
+    /// Stub that allows custom domain models to set up custom elements such as Machine Learning models,
+    /// lookups, special objects etc
+    /// </summary>
+    public override void SetupInstance(List<string[]> rawData)
+    {
+        try
+        {
+            _initialiser = new Initialiser(this.model, this);
+            this.Constants = new GeneralConstants(this.model.Lookups);
+
+            foreach (var row in rawData)
+            {
+                RoadSegment seg = RoadSegmentFactory.GetFromRawData(this.model, row, this.LookupUtil);
+            }
+
+        }
+        catch (Exception ex)
+        {
+            // Tell the user where the error occurred
+            throw new Exception($"Error setting up custom Road Network Model: {ex.Message}");            
+        }        
+    }
+
+    /// <summary>
+    /// Evaluates the Initial Values for all parameters for the element at the start of the analysis. This method is called from the Framework Model 
+    /// for all elements at the start of the model run. Use the raw/input data values with domain logic to assign an initial value to all
+    /// modelling parameters. 
+    /// </summary>
+    /// <param name="iElemIndex">Zero-based index of the element</param>    
+    /// <param name="rawRow">Input row associated with this element</param>    
+    /// <returns>An array of double values representing the actual or encoded values for all model parameters</returns>
+    public override double[] Initialise(int iElemIndex, string[] rawRow)
+    {
+        try
+        {
+            RoadSegment segment = _initialiser.InitialiseSegment(rawRow);
+            return null;
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error initialising on element index {iElemIndex}");
+        }
     }
 
     /// <summary>
@@ -78,20 +130,7 @@ public class RoadNetworkModel : DomainModelBase
         throw new NotImplementedException();
     }
 
-    /// <summary>
-    /// Evaluates the Initial Values for all parameters for the element at the start of the analysis. This method is called from the Framework Model 
-    /// for all elements at the start of the model run. Use the raw/input data values with domain logic to assign an initial value to all
-    /// modelling parameters. 
-    /// </summary>
-    /// <param name="iElemIndex">Zero-based index of the element</param>
-    /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="rawRow">Input row associated with this element</param>
-    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
-    /// <returns>An array of double values representing the actual or encoded values for all model parameters</returns>
-    public override double[] Initialise(int iElemIndex, string[] rawRow)
-    {
-        throw new NotImplementedException();
-    }
+    
 
     /// <summary>
     /// Omit this method. It is deprecated.
@@ -119,13 +158,6 @@ public class RoadNetworkModel : DomainModelBase
         throw new NotImplementedException();
     }
 
-    /// <summary>
-    /// Stub that allows custom domain models to set up custom elements such as Machine Learning models,
-    /// lookups, special objects etc
-    /// </summary>
-    public override void SetupInstance(List<string[]> rawData)
-    {
-        throw new NotImplementedException();
-    }
+    
 
 }

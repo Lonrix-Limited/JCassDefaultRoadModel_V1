@@ -14,3 +14,6 @@ C:\aa_git_repos\JCassDefaultRoadModel\obj\Debug\net9.0\JCassDefaultRoadModel.dll
 C:\aa_git_repos\JCassDefaultRoadModel\obj\Debug\net9.0\refint\JCassDefaultRoadModel.dll
 C:\aa_git_repos\JCassDefaultRoadModel\obj\Debug\net9.0\JCassDefaultRoadModel.pdb
 C:\aa_git_repos\JCassDefaultRoadModel\obj\Debug\net9.0\ref\JCassDefaultRoadModel.dll
+C:\aa_git_repos\JCassDefaultRoadModel\obj\Debug\net9.0\JCassDefaultRoadModel.sourcelink.json
+C:\aa_git_repos\JCassDefaultRoadModel\bin\Debug\net9.0\JCass_Functions.dll
+C:\aa_git_repos\JCassDefaultRoadModel\bin\Debug\net9.0\JCass_Functions.pdb
