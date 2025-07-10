@@ -24,6 +24,9 @@ namespace JCassDefaultRoadModel.Objects;
 public class RoadSegment
 {
 
+    private double _surfaceAge;
+    private double _surfaceAgeBeforeReset;
+
     #region Identification
 
     /// <summary>
@@ -124,10 +127,16 @@ public class RoadSegment
     
     #region Surface and Pavement Properties
 
+    private string _surfaceClass;
+
     /// <summary>
     /// Surface class ('cs', 'ac', 'blocks', 'concrete', 'other').
     /// </summary>
-    public string SurfaceClass { get; set; }
+    public string SurfaceClass
+    {
+        get => _surfaceClass;
+        set => _surfaceClass = value?.ToLower();
+    }
 
     /// <summary>
     /// Code that determines exceedance thresholds and improvement factors based on Urban/Rural, Road Class, and Surf Class. This code
@@ -178,7 +187,20 @@ public class RoadSegment
     /// <summary>
     /// Surfacing date in fractional years, calculated from the SurfacingDateString during Initialisation.
     /// </summary>
-    public double SurfaceAge { get; set; }
+    public double SurfaceAge 
+    { get {
+            return _surfaceAge;
+        }
+      set {
+            _surfaceAgeBeforeReset = this.SurfaceAge;
+            _surfaceAge = value;
+        } 
+    }
+    
+    /// <summary>
+    /// Intermediate variable holding the Surface Age before a reset was applied.
+    /// </summary>
+    public double SurfaceAgeBeforeReset { get { return _surfaceAgeBeforeReset; } }
 
     /// <summary>
     /// Surface function.
@@ -266,35 +288,66 @@ public class RoadSegment
 
     #region ONRC and Carriageway Attributes
 
+    private string _urbanRural;
+    private string _onrc;
+    private string _NztaHierarchy;
+    private string _onfStreetCategory;
+    private string _onfMovementRank;
+    private string _onfFreight;
+
     /// <summary>
     /// Urban/Rural flag.
     /// </summary>
-    public string UrbanRural { get; set; }
+    public string UrbanRural
+    {
+        get => _urbanRural;
+        set => _urbanRural = value?.ToLower();
+    }
 
     /// <summary>
     /// ONRC Category.
     /// </summary>
-    public string ONRC { get; set; }
+    public string ONRC
+    {
+        get => _onrc;
+        set => _onrc = value?.ToLower();
+    }
 
     /// <summary>
     /// NZTA Hierarchy (not in use).
     /// </summary>
-    public string NztaHierarchy { get; set; }
+    public string NztaHierarchy
+    {
+        get => _NztaHierarchy;
+        set => _NztaHierarchy = value?.ToLower();
+    }
 
     /// <summary>
     /// ONF Street Category (not in use).
     /// </summary>
-    public string OnfStreetCategory { get; set; }
+    public string OnfStreetCategory
+    {
+        get => _onfStreetCategory;
+        set => _onfStreetCategory = value?.ToLower();
+    }
 
     /// <summary>
     /// ONF Movement Rank (not in use).
     /// </summary>
-    public string OnfMovementRank { get; set; }
+    public string OnfMovementRank
+    {
+        get => _onfMovementRank;
+        set => _onfMovementRank = value?.ToLower();
+    }
 
     /// <summary>
     /// ONF Freight (not in use).
     /// </summary>
-    public string OnfFreight { get; set; }
+    public string OnfFreight
+    {
+        get => _onfFreight;
+        set => _onfFreight = value?.ToLower();
+    }
 
     /// <summary>
     /// Road use descriptor (not in use).
@@ -383,9 +436,15 @@ public class RoadSegment
     #region High Speed Data (HSD) (Rut, Roughness, Texture etc.)
 
     /// <summary>
-    /// Roughness segment survey date in dd/mm/yyyy format.
+    /// HSD survey date as a string in dd/mm/yyyy format. Do not use this
+    /// after initialitation - use the RutParameterValue property instead.
     /// </summary>
-    public string RoughnessSurveyDate { get; set; }
+    public string HsdSurveyDateString { get; set; }
+
+    /// <summary>
+    /// Roughness segment survey date as string in dd/mm/yyyy format.
+    /// </summary>
+    public string RoughnessSurveyDateString { get; set; }
 
     /// <summary>
     /// NAASRA 85th percentile roughness.
@@ -393,10 +452,10 @@ public class RoadSegment
     public double Naasra85 { get; set; }
 
     /// <summary>
-    /// HSD survey date as a string in dd/mm/yyyy format. Do not use this
-    /// after initialitation - use the RutParameterValue property instead.
+    /// Increment for Naasra in counts per year. This is calculated during initialisation based on the Roughness survey date and the Naasra85 value. After
+    /// the first treatment, the Roughness Increment model is used to estimate the increment each year.
     /// </summary>
-    public string HsdSurveyDateString { get; set; }
+    public double NaasraIncrement { get; set; }
 
     /// <summary>
     /// LWP mean rut 85th percentile from raw input values. Do not use this 
@@ -414,19 +473,33 @@ public class RoadSegment
     /// </summary>
     public double RutParameterValue { get; set; }
 
+    /// <summary>
+    /// Rut increment in mm/year. During initialisation, this is calculated based on the RutParameterValue and the HSD survey date. After 
+    /// the first treatment, the rut prediction model is used to estimate the increment.
+    /// </summary>
+    public double RutIncrement { get; set; }
+
     #endregion
 
-    #region Visual Condition Survey
+    #region Visual Condition Distresses
 
     /// <summary>
-    /// Condition survey date in dd/mm/yyyy format.
+    /// Condition survey date as string in dd/mm/yyyy format.
     /// </summary>
-    public string ConditionSurveyDate { get; set; }
+    public string ConditionSurveyDateString { get; set; }
 
     /// <summary>
     /// Percentage of alligator or mesh cracks.
     /// </summary>
-    public double PctAlligatorCracks { get; set; }
+    public double PctMeshCracks { get; set; }
+
+    /// <summary>
+    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
+    /// [AADI_InitialValue_T100] 
+    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
+    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// </summary>
+    public string MeshCrackModelInfo { get; set; }  
 
     /// <summary>
     /// Percentage of longitudinal and transverse cracks.

@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Treatments;
-using JCassDefaultRoadModel.Initialisation;
 using JCassDefaultRoadModel.LookupObjects;
 
 namespace JCassDefaultRoadModel.Objects;
@@ -13,9 +12,10 @@ namespace JCassDefaultRoadModel.Objects;
 public class RoadNetworkModel : DomainModelBase
 {
     public GeneralConstants Constants { get; set; }
-    public LookupUtility LookupUtil { get; set; }
-
+    
     private Initialiser _initialiser { get; set; }
+
+    public SCurveDistress MeshCrackModel;
 
 
     public RoadNetworkModel()
@@ -34,11 +34,7 @@ public class RoadNetworkModel : DomainModelBase
         {
             _initialiser = new Initialiser(this.model, this);
             this.Constants = new GeneralConstants(this.model.Lookups);
-                        
-            foreach (var row in rawData)
-            {
-                RoadSegment seg = RoadSegmentFactory.GetFromRawData(this.model, row, this.LookupUtil);
-            }
+
 
         }
         catch (Exception ex)
@@ -46,6 +42,29 @@ public class RoadNetworkModel : DomainModelBase
             // Tell the user where the error occurred
             throw new Exception($"Error setting up custom Road Network Model: {ex.Message}");            
         }        
+    }
+
+    private void SetupDistressModels()
+    {
+
+        // Get the thresholds for all S-Curve functions from the lookup table
+        double aadiMin = this.model.GetLookupValueNumber("distress", "aadi_min");
+        double aadiMax = this.model.GetLookupValueNumber("distress", "aadi_max");
+
+        double initValMin = this.model.GetLookupValueNumber("distress", "iv_min");
+        double initValMax = this.model.GetLookupValueNumber("distress", "iv_max");
+        double initValExpected = this.model.GetLookupValueNumber("distress", "iv_expected");
+
+        double t100Min = this.model.GetLookupValueNumber("distress", "t100_min");
+        double t100Max = this.model.GetLookupValueNumber("distress", "t100_max");
+
+
+        MeshCrackModel = new MeshCrackModel(this.model);
+        MeshCrackModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+
+
+
+
     }
 
     /// <summary>

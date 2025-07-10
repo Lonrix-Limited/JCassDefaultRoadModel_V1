@@ -19,7 +19,7 @@ public static class RoadSegmentFactory
     /// <param name="model">Model object from which to refer the Raw Data schema</param>
     /// <param name="rawRow">Row of raw data values for each column in the schema</param>
     /// <returns></returns>
-    public static RoadSegment GetFromRawData(ModelBase model, string[] rawRow, LookupUtility lookupUtil)
+    public static RoadSegment GetFromRawData(ModelBase model, string[] rawRow)
     {
         RoadSegment segment = new RoadSegment();
 
@@ -44,16 +44,16 @@ public static class RoadSegmentFactory
         segment.EarliestTreatmentPeriod = model.GetRawData_Number(rawRow, "file_earliest_treat_period");
 
         // Classification
-        segment.UrbanRural = model.GetRawData_Text(rawRow, "file_urban_rural");
-        segment.ONRC = model.GetRawData_Text(rawRow, "file_onrc");
-        segment.NztaHierarchy = model.GetRawData_Text(rawRow, "file_nzta_hierarchy");
-        segment.OnfStreetCategory = model.GetRawData_Text(rawRow, "file_onf_street_category");
-        segment.OnfMovementRank = model.GetRawData_Text(rawRow, "file_onf_movement_rank");
-        segment.OnfFreight = model.GetRawData_Text(rawRow, "file_onf_freight");
-        segment.RoadUse = model.GetRawData_Text(rawRow, "file_road_use");
+        segment.UrbanRural = model.GetRawData_Text(rawRow, "file_urban_rural").ToLower();
+        segment.ONRC = model.GetRawData_Text(rawRow, "file_onrc").ToLower();
+        segment.NztaHierarchy = model.GetRawData_Text(rawRow, "file_nzta_hierarchy").ToLower();
+        segment.OnfStreetCategory = model.GetRawData_Text(rawRow, "file_onf_street_category").ToLower();
+        segment.OnfMovementRank = model.GetRawData_Text(rawRow, "file_onf_movement_rank").ToLower();
+        segment.OnfFreight = model.GetRawData_Text(rawRow, "file_onf_freight").ToLower();
+        segment.RoadUse = model.GetRawData_Text(rawRow, "file_road_use").ToLower();
 
         //Lookup Road Class based on ONRC value (do NOTnuse file_road_class as this contains client-variant values)
-        segment.RoadClass = lookupUtil.GetRoadClass(segment.ONRC);   
+        segment.RoadClass = model.GetLookupValueText("road_class", segment.ONRC);
 
         // Traffic
         segment.NumberOfLanes = model.GetRawData_Number(rawRow, "file_no_of_lanes");
@@ -64,7 +64,7 @@ public static class RoadSegmentFactory
         segment.TrafficGrowthPercent = model.GetRawData_Number(rawRow, "file_traff_growth_perc");
 
         // Surfacing
-        segment.SurfaceClass = model.GetRawData_Text(rawRow, "file_surf_class");
+        segment.SurfaceClass = model.GetRawData_Text(rawRow, "file_surf_class").ToLower();
         segment.NextSurface = model.GetRawData_Text(rawRow, "file_next_surf");        
         segment.SurfacingDateString = model.GetRawData_Text(rawRow, "file_surf_date");
         segment.SurfaceFunction = model.GetRawData_Text(rawRow, "file_surf_function");
@@ -81,17 +81,17 @@ public static class RoadSegmentFactory
         segment.PavementFaultsM2 = model.GetRawData_Number(rawRow, "file_pa_fault_qty");
 
         // Roughness and rutting
-        segment.RoughnessSurveyDate = model.GetRawData_Text(rawRow, "file_roughsegment_date");
+        segment.RoughnessSurveyDateString = model.GetRawData_Text(rawRow, "file_roughsegment_date");
         segment.Naasra85 = model.GetRawData_Number(rawRow, "file_naasra_85");
         segment.HsdSurveyDateString = model.GetRawData_Text(rawRow, "file_hsd_date");
         segment.RutLwpMean85 = model.GetRawData_Number(rawRow, "file_rut_lwpmean_85");
         segment.RutRwpMean85 = model.GetRawData_Number(rawRow, "file_rut_rwpmean_85");
 
         // Condition survey
-        segment.ConditionSurveyDate = model.GetRawData_Text(rawRow, "file_cond_survey_date");
+        segment.ConditionSurveyDateString = model.GetRawData_Text(rawRow, "file_cond_survey_date");
 
         // Condition percentages
-        segment.PctAlligatorCracks = model.GetRawData_Number(rawRow, "file_pct_allig");
+        segment.PctMeshCracks = model.GetRawData_Number(rawRow, "file_pct_allig");
         segment.PctLongTransCracks = model.GetRawData_Number(rawRow, "file_pct_lt_crax");
         segment.PctPotholes = model.GetRawData_Number(rawRow, "file_pct_poth");
         segment.PctScabbing = model.GetRawData_Number(rawRow, "file_pct_scabb");
