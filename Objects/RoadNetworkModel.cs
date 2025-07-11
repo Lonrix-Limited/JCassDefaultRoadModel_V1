@@ -3,19 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
 using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Treatments;
-using JCassDefaultRoadModel.LookupObjects;
 
 namespace JCassDefaultRoadModel.Objects;
 
 public class RoadNetworkModel : DomainModelBase
 {
-    public GeneralConstants Constants { get; set; }
+    public Constants Constants { get; set; }
     
     private Initialiser _initialiser { get; set; }
+    private Resetter _resetter { get; set; }
+    private Incrementer _incrementer { get; set; }
 
-    public SCurveDistress MeshCrackModel;
+    public FlushingModel FlushingModel;
+    public EdgeBreakModel EdgeBreakModel;
+    public ScabbingModel ScabbingModel;
+    public LTCracksModel LTCracksModel;    
+    public MeshCrackModel MeshCrackModel;
+    public ShovingModel ShovingModel;
+    public PotholeModel PotholeModel;
+
 
 
     public RoadNetworkModel()
@@ -33,8 +42,10 @@ public class RoadNetworkModel : DomainModelBase
         try
         {
             _initialiser = new Initialiser(this.model, this);
-            this.Constants = new GeneralConstants(this.model.Lookups);
-
+            _resetter = new Resetter(this.model, this);
+            _incrementer = new Incrementer(this.model, this);
+            this.Constants = new Constants(this.model.Lookups);
+            this.SetupDistressModels();
 
         }
         catch (Exception ex)
@@ -58,12 +69,26 @@ public class RoadNetworkModel : DomainModelBase
         double t100Min = this.model.GetLookupValueNumber("distress", "t100_min");
         double t100Max = this.model.GetLookupValueNumber("distress", "t100_max");
 
+        this.FlushingModel = new FlushingModel(this.model);
+        FlushingModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
 
-        MeshCrackModel = new MeshCrackModel(this.model);
+        this.EdgeBreakModel = new EdgeBreakModel(this.model);
+        EdgeBreakModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+
+        this.ScabbingModel = new ScabbingModel(this.model);
+        ScabbingModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+
+        this.LTCracksModel = new LTCracksModel(this.model);
+        LTCracksModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+
+        this.MeshCrackModel = new MeshCrackModel(this.model);
         MeshCrackModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
 
+        this.ShovingModel = new ShovingModel(this.model);
+        ShovingModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
 
-
+        this.PotholeModel = new PotholeModel(this.model);
+        PotholeModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
 
     }
 
@@ -80,12 +105,32 @@ public class RoadNetworkModel : DomainModelBase
         try
         {
             RoadSegment segment = _initialiser.InitialiseSegment(rawRow);
-            return null;
+            Dictionary<string, object> parameterValues = _initialiser.GetParameterValues(segment);
+
+            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
+            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
+
+            return newValues;  //Return model parameter values for this element
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error initialising on element index {iElemIndex}");
+            throw new Exception($"Error initialising on element index {iElemIndex}. Details: {ex.Message}");
         }
+    }
+
+    /// <summary>
+    /// Evaluates the Reset/Updated values for all parameters for the element at the start of the analysis. This method is called from the Framework Model 
+    /// for all elements at the start of the model run. Use the raw/input data values with domain logic to assign an initial value to all
+    /// modelling parameters. 
+    /// </summary>
+    /// <param name="iElemIndex">Zero-based index of the element</param>
+    /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
+    /// <param name="rawRow">Input row associated with this element</param>
+    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
+    /// <returns>An array of double values representing the actual or encoded values for all model parameters after Reset is applied</returns>
+    public override double[] Reset(TreatmentInstance treatment, int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
+    {
+        throw new NotImplementedException();
     }
 
     /// <summary>
@@ -117,7 +162,22 @@ public class RoadNetworkModel : DomainModelBase
     /// <returns>A list of all treatment instances to consider for this element in the optimisation stage</returns>
     public override List<TreatmentInstance> GetTreatmentCandidates(int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
     {
-        throw new NotImplementedException();
+        try
+        {
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, prevValues, iPeriod);
+
+            RoadSegment segment = _initialiser.InitialiseSegment(rawRow);
+            Dictionary<string, object> parameterValues = _initialiser.GetParameterValues(segment);
+
+            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
+            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
+
+            return newValues;  //Return model parameter values for this element
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error checking Treatment Candidate Selection on element index {iElemIndex}. Details: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -148,8 +208,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         throw new NotImplementedException();
     }
-
-    
+        
 
     /// <summary>
     /// Omit this method. It is deprecated.
@@ -162,21 +221,10 @@ public class RoadNetworkModel : DomainModelBase
         throw new NotImplementedException();
     }
 
-    /// <summary>
-    /// Evaluates the Reset/Updated values for all parameters for the element at the start of the analysis. This method is called from the Framework Model 
-    /// for all elements at the start of the model run. Use the raw/input data values with domain logic to assign an initial value to all
-    /// modelling parameters. 
-    /// </summary>
-    /// <param name="iElemIndex">Zero-based index of the element</param>
-    /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="rawRow">Input row associated with this element</param>
-    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
-    /// <returns>An array of double values representing the actual or encoded values for all model parameters after Reset is applied</returns>
-    public override double[] Reset(TreatmentInstance treatment, int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
-    {
-        throw new NotImplementedException();
-    }
 
     
+
+
+
 
 }

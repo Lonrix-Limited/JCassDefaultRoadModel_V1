@@ -1,7 +1,5 @@
 ﻿using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Models;
-using JCassDefaultRoadModel.LookupObjects;
-using NPOI.SS.Formula.PTG;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -77,8 +75,8 @@ public static class RoadSegmentFactory
         segment.PavementType = model.GetRawData_Text(rawRow, "file_pave_type");
         segment.PavementDateString = model.GetRawData_Text(rawRow, "file_pave_date");
         segment.PavementRemainingLife = model.GetRawData_Number(rawRow, "file_pave_remlife");
-        segment.SurfacingFaultsM2 = model.GetRawData_Number(rawRow, "file_su_fault_qty");
-        segment.PavementFaultsM2 = model.GetRawData_Number(rawRow, "file_pa_fault_qty");
+        segment.FaultsAndMaintenanceSurfacingM2 = model.GetRawData_Number(rawRow, "file_su_fault_qty");
+        segment.FaultsAndMaintenancePavementM2 = model.GetRawData_Number(rawRow, "file_pa_fault_qty");
 
         // Roughness and rutting
         segment.RoughnessSurveyDateString = model.GetRawData_Text(rawRow, "file_roughsegment_date");

@@ -3,7 +3,11 @@ using DocumentFormat.OpenXml.Office2013.Excel;
 using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Wordprocessing;
 using JCass_Core.Engineering;
+using JCass_ModelCore.Models;
 using JCass_ModelCore.Treatments;
+using MathNet.Numerics.Integration;
+using MathNet.Numerics.LinearAlgebra;
+using NPOI.HSSF.Record.CF;
 using NPOI.SS.Formula.Functions;
 using System;
 using System.Collections.Generic;
@@ -13,6 +17,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics.X86;
 using System.Text;
 using System.Threading.Tasks;
+using static NPOI.HSSF.Util.HSSFColor;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JCassDefaultRoadModel.Objects;
@@ -218,6 +223,63 @@ public class RoadSegment
     public double SurfaceExpectedLife { get; set; }
 
     /// <summary>
+    /// Returns the Surface Expective life minus the Surface Age, which gives the remaining life of the surface in years.
+    /// </summary>
+    public double SurfaceRemainingLife
+    {
+        get
+        {            
+            return this.SurfaceExpectedLife - this.SurfaceAge;
+        }
+    }
+
+    /// <summary>
+    /// Checks if a second coat is needed. Will only return true if the following conditions are met:
+    /// <para>1. Surface is a Chipseal</para>
+    /// <para>2. Surface function is currently '1'</para>
+    /// <para>2. Next surface flag is also a Chipseal</para>
+    /// <para>2. Surface remaining life is less than or equal to 1</para>
+    /// </summary>
+    public bool SecondCoatNeeded
+    {
+        get
+        {
+            if (this.SurfaceClass == "cs" && this.SurfaceFunction == "1" && this.NextSurfaceIsChipSeal == true && this.SurfaceRemainingLife <= 1) 
+            { 
+                return true; 
+            } 
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Flag to indicate if the next surface is a chip seal. This is determined by checking the NextSurface property.
+    /// </summary>
+    public bool NextSurfaceIsChipSeal
+    {
+        get
+        {
+            // Return true if the next surface is chip seal, otherwise false.
+            return this.NextSurface == "cs";
+        }
+    }
+
+    /// <summary>
+    /// Returns the percentage of the Surface Expected Life that has been achieved based on the Surface Age.
+    /// </summary>
+    public double SurfaceAchievedLifePercent
+    {
+        get
+        {
+            if (this.SurfaceExpectedLife <= 0.0)
+            {
+                throw new Exception($"Surface expected life is zero or negative for segment {this.FeebackCode}. Surface Age: {this.SurfaceAge}, Expected Life: {this.SurfaceExpectedLife}.");
+            }
+            return 100 * (this.SurfaceAge / this.SurfaceExpectedLife);
+        }
+    }
+
+    /// <summary>
     /// Surfacing number of layers
     /// </summary>
     public double SurfaceNumberOfLayers { get; set; }
@@ -421,15 +483,79 @@ public class RoadSegment
 
     #region Faults and Maintenance
 
-    /// <summary>
-    /// Surfacing faults area in square metres.
-    /// </summary>
-    public double SurfacingFaultsM2 { get; set; }
+    private double _faultsAndMaintenanceSurfacingM2;
+    private double _faultsAndMaintenancePavementM2;
+    private double _faultsAndMaintenanceSurfacingPercent;
+    private double _faultsAndMaintenancePavementPercent;
 
     /// <summary>
-    /// Pavement faults area in square metres.
+    /// Surfacing faults area in square metres. Depending on how inputs are prepared, this field may include
+    /// any recent historical maintenance. Updating this value will also update the FaultsAndMaintenanceSurfacingPercent 
+    /// property based on the AreaSquareMetre.
     /// </summary>
-    public double PavementFaultsM2 { get; set; }
+    public double FaultsAndMaintenanceSurfacingM2
+    {
+        get
+        {
+            return _faultsAndMaintenanceSurfacingM2;
+        }
+        set
+        {
+            _faultsAndMaintenanceSurfacingM2 = value;
+            // Calculate the percentage of faults and maintenance based on the area.
+            if (this.AreaSquareMetre > 0)
+            {
+                _faultsAndMaintenanceSurfacingM2 = (value / this.AreaSquareMetre) * 100.0;
+            }
+            else
+            {
+                _faultsAndMaintenanceSurfacingPercent = 0.0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Percentage of Surfacing related Faults and Maintenance - calculated on the basis of FaultsAndMaintenanceSurfacingM2 and AreaSquareMetre.
+    /// </summary>
+    public double FaultsAndMaintenanceSurfacingPercent { get { return _faultsAndMaintenanceSurfacingPercent; } }
+
+    /// <summary>
+    /// Pavement faults area in square metres. Depending on how inputs are prepared, this field may include
+    /// any recent historical maintenance. Updating this value will also update the FaultsAndMaintenancePavementPercent 
+    /// property based on the AreaSquareMetre.
+    /// </summary>
+    public double FaultsAndMaintenancePavementM2
+    {
+        get
+        {
+            return _faultsAndMaintenancePavementM2;
+        }
+        set
+        {
+            _faultsAndMaintenancePavementM2 = value;
+            // Calculate the percentage of faults and maintenance based on the area.
+            if (this.AreaSquareMetre > 0)
+            {
+                _faultsAndMaintenancePavementPercent = (value / this.AreaSquareMetre) * 100.0;
+            }
+            else
+            {
+                _faultsAndMaintenancePavementPercent = 0.0;
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// Percentage of Pavement related Faults and Maintenance - calculated on the basis of FaultsAndMaintenancePavementM2 and AreaSquareMetre.
+    /// </summary>
+    public double FaultsAndMaintenancePavementPercent
+    {
+        get
+        {
+            return _faultsAndMaintenancePavementPercent;
+        }
+    }
 
     #endregion
 
@@ -489,27 +615,14 @@ public class RoadSegment
     public string ConditionSurveyDateString { get; set; }
 
     /// <summary>
-    /// Percentage of alligator or mesh cracks.
+    /// Percentage of flushing.
     /// </summary>
-    public double PctMeshCracks { get; set; }
+    public double PctFlushing { get; set; }
 
     /// <summary>
-    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
-    /// [AADI_InitialValue_T100] 
-    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
-    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// Percentage of edge breaks.
     /// </summary>
-    public string MeshCrackModelInfo { get; set; }  
-
-    /// <summary>
-    /// Percentage of longitudinal and transverse cracks.
-    /// </summary>
-    public double PctLongTransCracks { get; set; }
-
-    /// <summary>
-    /// Percentage of potholes.
-    /// </summary>
-    public double PctPotholes { get; set; }
+    public double PctEdgeBreaks { get; set; }
 
     /// <summary>
     /// Percentage of scabbing.
@@ -517,9 +630,14 @@ public class RoadSegment
     public double PctScabbing { get; set; }
 
     /// <summary>
-    /// Percentage of flushing.
+    /// Percentage of longitudinal and transverse cracks.
     /// </summary>
-    public double PctFlushing { get; set; }
+    public double PctLongTransCracks { get; set; }
+
+    /// <summary>
+    /// Percentage of alligator or mesh cracks.
+    /// </summary>
+    public double PctMeshCracks { get; set; }
 
     /// <summary>
     /// Percentage of shoving.
@@ -527,9 +645,252 @@ public class RoadSegment
     public double PctShoving { get; set; }
 
     /// <summary>
-    /// Percentage of edge breaks.
+    /// Percentage of potholes.
     /// </summary>
-    public double PctEdgeBreaks { get; set; }
+
+    public double PctPotholes { get; set; }
+
+    /// <summary>
+    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
+    /// [AADI_InitialValue_T100] 
+    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
+    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// </summary>
+    public string FlushingModelInfo { get; set; }
+
+    /// <summary>
+    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
+    /// [AADI_InitialValue_T100] 
+    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
+    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// </summary>
+    public string EdgeBreakModelInfo { get; set; }
+
+    /// <summary>
+    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
+    /// [AADI_InitialValue_T100] 
+    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
+    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// </summary>
+    public string ScabbingModelInfo { get; set; }
+
+    /// <summary>
+    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
+    /// [AADI_InitialValue_T100] 
+    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
+    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// </summary>
+    public string LTCracksModelInfo { get; set; }
+
+    /// <summary>
+    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
+    /// [AADI_InitialValue_T100] 
+    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
+    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// </summary>
+    public string MeshCrackModelInfo { get; set; }
+
+    /// <summary>
+    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
+    /// [AADI_InitialValue_T100] 
+    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
+    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// </summary>
+    public string ShovingModelInfo { get; set; }
+
+    /// <summary>
+    /// Coded information on the current values for the S-curve model for this distress. Values are stored as:
+    /// [AADI_InitialValue_T100] 
+    /// where: AADI is the Age at Distress Initiation, InitialValue is the percent distress observed right
+    /// after initiation, and T100 is the time it takes for the distress to reach 100% of the segment area.
+    /// </summary>
+    public string PotholeModelInfo { get; set; }
+
+    #endregion
+
+    #region Indexes and Objective Value
+
+    public double GetPavementDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        // Calculate the Pavement Distress Index (PDI) based on the current period.
+        return CalculationUtilities.GetPavementDistressIndex(this, frameworkModel, domainModel, currentPeriod);
+    }
+
+    public double GetSurfaceDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        // Calculate the Surface Distress Index (SDI) based on the current period.
+        return CalculationUtilities.GetSurfacingDistressIndex(this, frameworkModel, domainModel, currentPeriod);
+    }
+
+    /// <summary>
+    /// BCA objective distress condition placed on scaling curve (part 2 of 3)
+    /// </summary>
+    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>
+    public double GetObjectiveDistress(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        double pdi = this.GetPavementDistressIndex(frameworkModel, domainModel, currentPeriod);
+        double sdi = this.GetSurfaceDistressIndex(frameworkModel, domainModel, currentPeriod);
+        double objectiveDistressPre1 = 0.7 * pdi + 0.3 * sdi;
+
+        //0.4 * post_obj_distress_pre1 + -4
+        double objectiveDistressPre = 0.4 * objectiveDistressPre1 - 4.0;        
+        double objectiveDistress = 100 * CalculationUtilities.Logit(objectiveDistressPre);
+
+        return objectiveDistress;
+    }
+
+    /// <summary>
+    /// BCA objective remaining surface life on scaling curve (part 1 of 3)
+    /// </summary>    
+    public double GetObjectiveRemainingSurfaceLife(ModelBase frameworkModel, RoadNetworkModel domainModel)
+    {
+        //-0.5 * para_surf_remain_life + -2.5
+        double rslPre = -0.5 * this.SurfaceRemainingLife - 2.5;
+
+        //100 * logit(post_obj_rsl_pre)
+        double objectiveRemainingSurfaceLife = 100 * CalculationUtilities.Logit(rslPre);
+        return objectiveRemainingSurfaceLife;
+    }
+
+    /// <summary>
+    /// BCA objective rutting on scaling curve (part 3 of 3)
+    /// </summary>    
+    public double GetObjectiveRutting(ModelBase frameworkModel, RoadNetworkModel domainModel)
+    {
+        double rutExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", this.SurfaceRoadType);
+        double objRutPre1 = this.RutIncrement - rutExceedanceThreshold;
+        //0.55 * post_obj_rutting_pre1 + -1.65
+        double objRutPre = 0.55 * objRutPre1 - 1.65;
+
+        //100 * logit(post_obj_rutting_pre)
+        double objectiveRutting = 100 * CalculationUtilities.Logit(objRutPre);
+
+        return objectiveRutting;
+    }
+
+    /// <summary>
+    /// BCA objective roughness on scaling curve (part 3 of 3)
+    /// </summary>    
+    public double GetObjectiveNaasra(ModelBase frameworkModel, RoadNetworkModel domainModel)
+    {
+        double naasraExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_naasra", this.SurfaceRoadType);
+        double objNaasraPre1 = this.Naasra85 - naasraExceedanceThreshold;
+
+        //0.044 * post_obj_naasra_pre1 + -1.76
+        double objNaasraPre = 0.044 * objNaasraPre1 - 1.76;
+
+        //100 * logit(post_obj_naasra_pre)
+        double objectiveNaasra = 100 * CalculationUtilities.Logit(objNaasraPre);
+        return objectiveNaasra;
+
+    }
+
+    /// <summary>
+    /// BCA objective raw value, based on weighted sum of the objective components
+    /// </summary>    
+    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
+    public double GetObjectiveValueRaw(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {        
+        double objDistress = this.GetObjectiveDistress(frameworkModel, domainModel, currentPeriod);
+        double objRutting = this.GetObjectiveRutting(frameworkModel, domainModel);
+        double objNaasra = this.GetObjectiveNaasra(frameworkModel, domainModel);
+        double objRemainingSurfaceLife = this.GetObjectiveRemainingSurfaceLife(frameworkModel, domainModel);
+
+        double objectiveO = 0.3 * objDistress +
+                            0.2 * objRemainingSurfaceLife +
+                            0.25 * objRutting +
+                            0.25 * objNaasra;
+        return objectiveO;
+    }
+
+    /// <summary>
+    /// BCA objective value weighted by Road Type
+    /// </summary>
+    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
+    public double GetObjectiveValue(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        double objConst = 30;
+        double objWeighting = frameworkModel.GetLookupValueNumber("bca_weighting", this.RoadType);
+        //post_obj_o * post_obj_weighting + post_obj_c * 1min(post_obj_weighting)
+        double objectiveO = this.GetObjectiveValueRaw(frameworkModel, domainModel, currentPeriod) * objWeighting + objConst * (1 - objWeighting);
+        return objectiveO;
+    }
+
+    /// <summary>
+    /// Goes to BCA objective (menu in Model Configuration), this is the BCA objective scaled by multiplying with treatment area to normalise the cost, 
+    /// to use for AUC calculation in BCA model
+    /// </summary>
+    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
+    public double GetObjectiveAreaUnderCurve(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {        
+        double objectiveValue = this.GetObjectiveValue(frameworkModel, domainModel, currentPeriod);
+        return objectiveValue * this.AreaSquareMetre; // Scale by area
+    }
+
+
+
+    #endregion
+
+    #region Maintenance Cost
+
+    public double GetMaintenanceCostPerKm(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        if (this.SurfaceIsChipSealOrACFlag == 0)
+        {
+            // If the surface is not chip seal or asphalt concrete, return 0.0
+            return 0.0;
+        }
+
+        // 0.0122 * para_naasra + 0.055 * ln(post_maintpred_shove) + 0.048 * ln(post_maintpred_mesh) + 0.243 * ln(para_adt) + 0.644 * ln(para_rut) + 0.01 * para_pave_age +
+        // 0.03 * ln(post_maintpred_poth) + 5.227
+        double preFactor = 0.0122 * this.Naasra85 +
+                           0.055 * Math.Log(Math.Max(this.PctShoving, 0.001)) + 
+                           0.048 * Math.Log(Math.Max(this.PctMeshCracks, 0.001)) + 
+                           0.243 * Math.Log(Math.Max(this.AverageDailyTraffic, 0.001)) + 
+                           0.644 * Math.Log(Math.Max(this.RutParameterValue, 0.001)) +
+                           0.01 * this.PavementAge +
+                           0.03 * Math.Log(Math.Max(this.PctPotholes, 0.001)) + 
+                           5.227;
+
+        double calibrationFactor = domainModel.Constants.MaintenanceCostCalibrationFactor;        
+        return (calibrationFactor * Math.Exp(preFactor));
+        
+    }
+
+    #endregion
+
+    #region Treatment Related
+
+    private bool _isTreated = false;
+    private int _treatmentCount = 0;
+
+    /// <summary>
+    /// Flag to be set whenever the model applies a treatment. If this flag is set to true. Value is determined by treatment count.    
+    /// </summary>
+    public bool IsTreated
+    {
+        get => _isTreated;        
+    }
+
+    /// <summary>
+    /// Treatment count. This should be incremented each time a treatment is applied to the segment. If the count is greater than zero, 
+    /// the IsTreated flag will automatically be set to true. This property also resets the FaultsAndMaintenancePavementM2 and FaultsAndMaintenanceSurfacingM2
+    /// </summary>
+    public int TreatmentCount
+    {
+        get => _treatmentCount;
+        set
+        {
+            // Increment the treatment count and set the IsTreated flag to true.
+            _treatmentCount = value;
+            if (_treatmentCount > 0)
+            {
+                _isTreated = true;
+                this.FaultsAndMaintenancePavementM2 = 0.0; // Reset pavement faults and maintenance area after treatment
+                this.FaultsAndMaintenanceSurfacingM2 = 0.0; // Reset surfacing faults and maintenance area after treatment
+            }
+        }
+    }
 
     #endregion
 

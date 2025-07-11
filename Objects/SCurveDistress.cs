@@ -106,7 +106,10 @@ public abstract class SCurveDistress
     {
         DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.ConditionSurveyDateString);
         double age = (baseDate - surveyDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
-        if (age < 0) { _frameworkModel.LogMessage($"Distress Condition Survey date for segment {segment.FeebackCode} is in the future", false); }
+        if (age < 0) 
+        { 
+            _frameworkModel.LogMessage($"Distress Condition Survey date for segment {segment.FeebackCode} is in the future", false); 
+        }
 
         bool dataIsOutdated = segment.SurfaceAge < age;
         if (dataIsOutdated)
@@ -519,9 +522,9 @@ public class LTCracksModel : SCurveDistress
         _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
         _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);
 
-        _resetLimit1 = _frameworkModel.GetLookupValueNumber("distress_reset", " lt_cracks_reset_limit1");
-        _resetLimit2 = _frameworkModel.GetLookupValueNumber("distress_reset", " lt_cracks_reset_limit2");
-        _resetLimit3 = _frameworkModel.GetLookupValueNumber("distress_reset", " lt_cracks_reset_limit3");
+        _resetLimit1 = _frameworkModel.GetLookupValueNumber("distress_reset", "lt_cracks_reset_limit1");
+        _resetLimit2 = _frameworkModel.GetLookupValueNumber("distress_reset", "lt_cracks_reset_limit2");
+        _resetLimit3 = _frameworkModel.GetLookupValueNumber("distress_reset", "lt_cracks_reset_limit3");
 
         _AadiBoostForHoldingAction = _frameworkModel.GetLookupValueNumber("resets_general", "aadi_boost_holding_lt_cracks");
 
@@ -668,9 +671,9 @@ public class PotholeModel : SCurveDistress
         _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
         _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);
 
-        _resetLimit1 = _frameworkModel.GetLookupValueNumber("distress_reset", " poth_reset_limit1");
-        _resetLimit2 = _frameworkModel.GetLookupValueNumber("distress_reset", " poth_reset_limit2");
-        _resetLimit3 = _frameworkModel.GetLookupValueNumber("distress_reset", " poth_reset_limit3");
+        _resetLimit1 = _frameworkModel.GetLookupValueNumber("distress_reset", "poth_reset_limit1");
+        _resetLimit2 = _frameworkModel.GetLookupValueNumber("distress_reset", "poth_reset_limit2");
+        _resetLimit3 = _frameworkModel.GetLookupValueNumber("distress_reset", "poth_reset_limit3");
 
         _AadiBoostForHoldingAction = _frameworkModel.GetLookupValueNumber("resets_general", "aadi_boost_holding_poth");
 
