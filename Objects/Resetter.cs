@@ -170,9 +170,7 @@ public class Resetter
         {
             double exceedanceThreshold = _frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", segment.SurfaceRoadType);
             double improvementFactor = _frameworkModel.GetLookupValueNumber("reset_perc_improv_facts_rut", segment.SurfaceRoadType);
-
-            double exceedance = segment.RutParameterValue <= exceedanceThreshold ? 0 : exceedanceThreshold - segment.RutParameterValue;
-            return segment.RutParameterValue + (exceedance * improvementFactor);
+            return CalculationUtilities.GetResetBasedOnExceedanceConcept(segment.RutParameterValue, exceedanceThreshold, improvementFactor);
         }
             
 
@@ -198,9 +196,7 @@ public class Resetter
         {
             double exceedanceThreshold = _frameworkModel.GetLookupValueNumber("reset_exceed_thresh_naasra", segment.SurfaceRoadType);
             double improvementFactor = _frameworkModel.GetLookupValueNumber("reset_perc_improv_facts_naasra", segment.SurfaceRoadType);
-
-            double exceedance = segment.Naasra85 <= exceedanceThreshold ? 0 : exceedanceThreshold - segment.Naasra85;
-            return segment.Naasra85 + (exceedance * improvementFactor);
+            return CalculationUtilities.GetResetBasedOnExceedanceConcept(segment.RutParameterValue, exceedanceThreshold, improvementFactor);
         }
 
 

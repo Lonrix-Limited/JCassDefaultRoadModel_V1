@@ -1,0 +1,51 @@
+﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using JCass_Functions.Engineering;
+using JCass_ModelCore.DomainModels;
+using JCass_ModelCore.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace JCassDefaultRoadModel.Objects;
+
+public static class TreatmentSuitabilityScorer
+{
+
+    public static double GetTSSForPreservationTreatment(RoadSegment segment, ModelBase frameworkModel, RoadNetworkModel domainModel, int iPeriod)
+    {
+        string tssModelSetup = $"{domainModel.Constants.TSSPreserveSdiRank},0|100,100";
+        PieceWiseLinearModelGeneric tssModel = new PieceWiseLinearModelGeneric(tssModelSetup, true);
+
+        double sdi = segment.GetSurfaceDistressIndex(frameworkModel, domainModel, iPeriod);
+        double tssScore = tssModel.GetValue(segment.SurfaceDistressIndexRank);   //Use RANK, not the SDI itself!!
+        return tssScore;
+    }
+
+    public static double GetTSSForRehabilitation(RoadSegment segment, ModelBase frameworkModel, RoadNetworkModel domainModel, int iPeriod)
+    {
+        double excessRutThreshold = domainModel.Constants.TSSRehabExcessRutThresh;
+        double rutPenaltyFactor = domainModel.Constants.TSSRehabExcessRutFact;
+        double excessRutPenalty = segment.RutParameterValue > excessRutThreshold ? (segment.RutParameterValue - excessRutThreshold) * rutPenaltyFactor : 0.0;
+
+        string tssModelSetup = $"{domainModel.Constants.TSSRehabPdiRank},0|100,100";
+        PieceWiseLinearModelGeneric tssModel = new PieceWiseLinearModelGeneric(tssModelSetup, true);
+
+        double pdi = segment.GetPavementDistressIndex(frameworkModel, domainModel, iPeriod);
+        double tssScore1 = tssModel.GetValue(segment.PavementDistressIndexRank);   //Use RANK, not the PDI itself!!
+        double tssScore = tssScore1 + excessRutPenalty;
+
+        return tssScore;
+    }
+
+    public static double GetTSSForPresealRepairs(RoadSegment segment, ModelBase frameworkModel, RoadNetworkModel domainModel, int iPeriod)
+    {
+        // If we get here, a preservation treatment is valid. Calculate the relative suitability score based on the Surface Distress Index (SDI)
+        string tssModelSetup = $"{domainModel.Constants.TSSHoldingPdiRankPt1},0|{domainModel.Constants.TSSHoldingPdiRankPt2},100 | 100,{domainModel.Constants.TSSHoldingPdiRankPt3}";
+        PieceWiseLinearModelGeneric tssModel = new PieceWiseLinearModelGeneric(tssModelSetup, true);        
+        double tssScore = tssModel.GetValue(segment.PavementDistressIndexRank);
+        return tssScore;
+    }
+
+}

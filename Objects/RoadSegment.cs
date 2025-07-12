@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Office2013.Excel;
 using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Wordprocessing;
 using JCass_Core.Engineering;
+using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Models;
 using JCass_ModelCore.Treatments;
 using MathNet.Numerics.Integration;
@@ -111,17 +112,17 @@ public class RoadSegment
     /// <summary>
     /// Can this segment be considered for treatment (client specific based on policy).
     /// </summary>
-    public string CanTreatFlag { get; set; }
+    public int CanTreatFlag { get; set; }
 
     /// <summary>
     /// Can this segment be considered for Rehab (client specific).
     /// </summary>
-    public string CanRehabFlag { get; set; }
+    public int CanRehabFlag { get; set; }
 
     /// <summary>
     /// Is the pavement suitable for asphalt resurfacing.
     /// </summary>
-    public string AsphaltOkFlag { get; set; }
+    public int AsphaltOkFlag { get; set; }
 
     /// <summary>
     /// Earliest modelling period the first treatment may be triggered.
@@ -180,7 +181,7 @@ public class RoadSegment
     }
 
     /// <summary>
-    /// Replacement surfacing type.
+    /// Replacement surfacing type. Could be 'ac', 'cs', 'blocks', 'concrete' etc.
     /// </summary>
     public string NextSurface { get; set; }
 
@@ -710,130 +711,83 @@ public class RoadSegment
 
     #region Indexes and Objective Value
 
-    public double GetPavementDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
-    {
-        // Calculate the Pavement Distress Index (PDI) based on the current period.
-        return CalculationUtilities.GetPavementDistressIndex(this, frameworkModel, domainModel, currentPeriod);
-    }
+    private double _pavementDistressIndex;
+    private double _surfaceDistressIndex;
+    
+    private double _objectiveDistressIndex;
+    private double _objectiveRemainingSurfaceLife;
+    private double _objectiveRutting;
+    private double _objectiveNaasra;
+    private double _objectiveValueRaw;
+    private double _objectiveValue;
+    private double _objectiveAreaUnderCurve;
 
-    public double GetSurfaceDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
-    {
-        // Calculate the Surface Distress Index (SDI) based on the current period.
-        return CalculationUtilities.GetSurfacingDistressIndex(this, frameworkModel, domainModel, currentPeriod);
-    }
+    // Convert all of the above backing variables into read-nonly properties
+
+    public double PavementDistressIndex { get { return _pavementDistressIndex; } }
+
+    public double SurfaceDistressIndex { get { return _surfaceDistressIndex; } }
+
 
     /// <summary>
     /// BCA objective distress condition placed on scaling curve (part 2 of 3)
     /// </summary>
-    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>
-    public double GetObjectiveDistress(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
-    {
-        double pdi = this.GetPavementDistressIndex(frameworkModel, domainModel, currentPeriod);
-        double sdi = this.GetSurfaceDistressIndex(frameworkModel, domainModel, currentPeriod);
-        double objectiveDistressPre1 = 0.7 * pdi + 0.3 * sdi;
-
-        //0.4 * post_obj_distress_pre1 + -4
-        double objectiveDistressPre = 0.4 * objectiveDistressPre1 - 4.0;        
-        double objectiveDistress = 100 * CalculationUtilities.Logit(objectiveDistressPre);
-
-        return objectiveDistress;
-    }
+    public double ObjectiveDistress { get { return _objectiveDistressIndex; } }
 
     /// <summary>
     /// BCA objective remaining surface life on scaling curve (part 1 of 3)
     /// </summary>    
-    public double GetObjectiveRemainingSurfaceLife(ModelBase frameworkModel, RoadNetworkModel domainModel)
-    {
-        //-0.5 * para_surf_remain_life + -2.5
-        double rslPre = -0.5 * this.SurfaceRemainingLife - 2.5;
-
-        //100 * logit(post_obj_rsl_pre)
-        double objectiveRemainingSurfaceLife = 100 * CalculationUtilities.Logit(rslPre);
-        return objectiveRemainingSurfaceLife;
-    }
+    public double ObjectiveRemainingSurfaceLife { get { return _objectiveRemainingSurfaceLife; } }
 
     /// <summary>
     /// BCA objective rutting on scaling curve (part 3 of 3)
     /// </summary>    
-    public double GetObjectiveRutting(ModelBase frameworkModel, RoadNetworkModel domainModel)
-    {
-        double rutExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", this.SurfaceRoadType);
-        double objRutPre1 = this.RutIncrement - rutExceedanceThreshold;
-        //0.55 * post_obj_rutting_pre1 + -1.65
-        double objRutPre = 0.55 * objRutPre1 - 1.65;
-
-        //100 * logit(post_obj_rutting_pre)
-        double objectiveRutting = 100 * CalculationUtilities.Logit(objRutPre);
-
-        return objectiveRutting;
-    }
+    public double ObjectiveRutting { get { return _objectiveRutting; } }
 
     /// <summary>
     /// BCA objective roughness on scaling curve (part 3 of 3)
-    /// </summary>    
-    public double GetObjectiveNaasra(ModelBase frameworkModel, RoadNetworkModel domainModel)
-    {
-        double naasraExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_naasra", this.SurfaceRoadType);
-        double objNaasraPre1 = this.Naasra85 - naasraExceedanceThreshold;
-
-        //0.044 * post_obj_naasra_pre1 + -1.76
-        double objNaasraPre = 0.044 * objNaasraPre1 - 1.76;
-
-        //100 * logit(post_obj_naasra_pre)
-        double objectiveNaasra = 100 * CalculationUtilities.Logit(objNaasraPre);
-        return objectiveNaasra;
-
-    }
+    /// </summary>   
+    public double ObjectiveNaasra { get { return _objectiveNaasra; } }
 
     /// <summary>
     /// BCA objective raw value, based on weighted sum of the objective components
-    /// </summary>    
-    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
-    public double GetObjectiveValueRaw(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
-    {        
-        double objDistress = this.GetObjectiveDistress(frameworkModel, domainModel, currentPeriod);
-        double objRutting = this.GetObjectiveRutting(frameworkModel, domainModel);
-        double objNaasra = this.GetObjectiveNaasra(frameworkModel, domainModel);
-        double objRemainingSurfaceLife = this.GetObjectiveRemainingSurfaceLife(frameworkModel, domainModel);
-
-        double objectiveO = 0.3 * objDistress +
-                            0.2 * objRemainingSurfaceLife +
-                            0.25 * objRutting +
-                            0.25 * objNaasra;
-        return objectiveO;
-    }
+    /// </summary>  
+    public double ObjectiveValueRaw { get { return _objectiveValueRaw; } }
 
     /// <summary>
     /// BCA objective value weighted by Road Type
     /// </summary>
-    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
-    public double GetObjectiveValue(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
-    {
-        double objConst = 30;
-        double objWeighting = frameworkModel.GetLookupValueNumber("bca_weighting", this.RoadType);
-        //post_obj_o * post_obj_weighting + post_obj_c * 1min(post_obj_weighting)
-        double objectiveO = this.GetObjectiveValueRaw(frameworkModel, domainModel, currentPeriod) * objWeighting + objConst * (1 - objWeighting);
-        return objectiveO;
-    }
+    public double ObjectiveValue { get { return _objectiveValue; } }
 
     /// <summary>
     /// Goes to BCA objective (menu in Model Configuration), this is the BCA objective scaled by multiplying with treatment area to normalise the cost, 
     /// to use for AUC calculation in BCA model
     /// </summary>
-    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
-    public double GetObjectiveAreaUnderCurve(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
-    {        
-        double objectiveValue = this.GetObjectiveValue(frameworkModel, domainModel, currentPeriod);
-        return objectiveValue * this.AreaSquareMetre; // Scale by area
-    }
+    public double ObjectiveAreaUnderCurve { get { return _objectiveAreaUnderCurve; } }
 
+    /// <summary>
+    /// Percent Rank of the PDI for this segment
+    /// </summary>
+    public double PavementDistressIndexRank { get; set; }
+
+    /// <summary>
+    /// Percent Rank of the SDI for this segment
+    /// </summary>
+    public double SurfaceDistressIndexRank { get; set; }
 
 
     #endregion
 
     #region Maintenance Cost
 
-    public double GetMaintenanceCostPerKm(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    private double _maintenanceCostPerKm;
+
+    /// <summary>
+    /// Maintenance Cost per Km
+    /// </summary>
+    public double MaintenanceCostPerKm { get { return  MaintenanceCostPerKm; } }
+
+    private double GetMaintenanceCostPerKm(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
     {
         if (this.SurfaceIsChipSealOrACFlag == 0)
         {
@@ -894,5 +848,238 @@ public class RoadSegment
 
     #endregion
 
+    #region Helper Methods
+
+    public void UpdateFormulaValues(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        // PDI and SDI
+        _pavementDistressIndex = this.GetPavementDistressIndex(frameworkModel, domainModel, currentPeriod);
+        _surfaceDistressIndex = this.GetSurfaceDistressIndex(frameworkModel, domainModel, currentPeriod);
+
+        // Sub-Parameters for Objective Values
+        _objectiveDistressIndex = this.GetObjectiveDistress(frameworkModel, domainModel, currentPeriod);
+        _objectiveRemainingSurfaceLife = this.GetObjectiveRemainingSurfaceLife(frameworkModel, domainModel);
+        _objectiveRutting = this.GetObjectiveRutting(frameworkModel, domainModel);
+        _objectiveNaasra = this.GetObjectiveNaasra(frameworkModel, domainModel);
+        _objectiveValueRaw = this.GetObjectiveValueRaw(frameworkModel, domainModel, currentPeriod);
+        _objectiveValue = this.GetObjectiveValue(frameworkModel, domainModel, currentPeriod);
+        _objectiveAreaUnderCurve = this.GetObjectiveAreaUnderCurve(frameworkModel, domainModel, currentPeriod);
+
+        // Maintenance Cost
+        _maintenanceCostPerKm = this.GetMaintenanceCostPerKm(frameworkModel, domainModel, currentPeriod);
+    }
+
+    private double GetPavementDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        // Calculate the Pavement Distress Index (PDI) based on the current period.
+        return CalculationUtilities.GetPavementDistressIndex(this, frameworkModel, domainModel, currentPeriod);
+    }
+
+    private double GetSurfaceDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        // Calculate the Surface Distress Index (SDI) based on the current period.
+        return CalculationUtilities.GetSurfacingDistressIndex(this, frameworkModel, domainModel, currentPeriod);
+    }
+
+
+    /// <summary>
+    /// BCA objective distress condition placed on scaling curve (part 2 of 3)
+    /// </summary>
+    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>
+    private double GetObjectiveDistress(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        double pdi = this.GetPavementDistressIndex(frameworkModel, domainModel, currentPeriod);
+        double sdi = this.GetSurfaceDistressIndex(frameworkModel, domainModel, currentPeriod);
+        double objectiveDistressPre1 = 0.7 * pdi + 0.3 * sdi;
+
+        //0.4 * post_obj_distress_pre1 + -4
+        double objectiveDistressPre = 0.4 * objectiveDistressPre1 - 4.0;
+        double objectiveDistress = 100 * CalculationUtilities.Logit(objectiveDistressPre);
+
+        return objectiveDistress;
+    }
+
+    /// <summary>
+    /// BCA objective remaining surface life on scaling curve (part 1 of 3)
+    /// </summary>    
+    private double GetObjectiveRemainingSurfaceLife(ModelBase frameworkModel, RoadNetworkModel domainModel)
+    {
+        //-0.5 * para_surf_remain_life + -2.5
+        double rslPre = -0.5 * this.SurfaceRemainingLife - 2.5;
+
+        //100 * logit(post_obj_rsl_pre)
+        double objectiveRemainingSurfaceLife = 100 * CalculationUtilities.Logit(rslPre);
+        return objectiveRemainingSurfaceLife;
+    }
+
+    /// <summary>
+    /// BCA objective rutting on scaling curve (part 3 of 3)
+    /// </summary>    
+    private double GetObjectiveRutting(ModelBase frameworkModel, RoadNetworkModel domainModel)
+    {
+        double rutExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", this.SurfaceRoadType);
+        double objRutPre1 = this.RutIncrement - rutExceedanceThreshold;
+        //0.55 * post_obj_rutting_pre1 + -1.65
+        double objRutPre = 0.55 * objRutPre1 - 1.65;
+
+        //100 * logit(post_obj_rutting_pre)
+        double objectiveRutting = 100 * CalculationUtilities.Logit(objRutPre);
+
+        return objectiveRutting;
+    }
+
+    /// <summary>
+    /// BCA objective roughness on scaling curve (part 3 of 3)
+    /// </summary>    
+    private double GetObjectiveNaasra(ModelBase frameworkModel, RoadNetworkModel domainModel)
+    {
+        double naasraExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_naasra", this.SurfaceRoadType);
+        double objNaasraPre1 = this.Naasra85 - naasraExceedanceThreshold;
+
+        //0.044 * post_obj_naasra_pre1 + -1.76
+        double objNaasraPre = 0.044 * objNaasraPre1 - 1.76;
+
+        //100 * logit(post_obj_naasra_pre)
+        double objectiveNaasra = 100 * CalculationUtilities.Logit(objNaasraPre);
+        return objectiveNaasra;
+
+    }
+
+    /// <summary>
+    /// BCA objective raw value, based on weighted sum of the objective components
+    /// </summary>    
+    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
+    private double GetObjectiveValueRaw(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        double objDistress = this.GetObjectiveDistress(frameworkModel, domainModel, currentPeriod);
+        double objRutting = this.GetObjectiveRutting(frameworkModel, domainModel);
+        double objNaasra = this.GetObjectiveNaasra(frameworkModel, domainModel);
+        double objRemainingSurfaceLife = this.GetObjectiveRemainingSurfaceLife(frameworkModel, domainModel);
+
+        double objectiveO = 0.3 * objDistress +
+                            0.2 * objRemainingSurfaceLife +
+                            0.25 * objRutting +
+                            0.25 * objNaasra;
+        return objectiveO;
+    }
+
+    /// <summary>
+    /// BCA objective value weighted by Road Type
+    /// </summary>
+    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
+    private double GetObjectiveValue(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        double objConst = 30;
+        double objWeighting = frameworkModel.GetLookupValueNumber("bca_weighting", this.RoadType);
+        //post_obj_o * post_obj_weighting + post_obj_c * 1min(post_obj_weighting)
+        double objectiveO = this.GetObjectiveValueRaw(frameworkModel, domainModel, currentPeriod) * objWeighting + objConst * (1 - objWeighting);
+        return objectiveO;
+    }
+
+    /// <summary>
+    /// Goes to BCA objective (menu in Model Configuration), this is the BCA objective scaled by multiplying with treatment area to normalise the cost, 
+    /// to use for AUC calculation in BCA model
+    /// </summary>
+    /// <param name="currentPeriod">Current modelling period (1,2,3, etc) used to determine PDI and SDI (need to know long or short term)</param>    
+    private double GetObjectiveAreaUnderCurve(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    {
+        double objectiveValue = this.GetObjectiveValue(frameworkModel, domainModel, currentPeriod);
+        return objectiveValue * this.AreaSquareMetre; // Scale by area
+    }
+
+    /// <summary>
+    /// Creates a dictionary that holds a key for each model parameter and assigns the appropriate value from the segment object.
+    /// </summary>
+    /// <param name="iPeriod">Current modelling period (e.g. 1,2,3,...)</param>
+    /// <param name="specialPlaceholders"> Dictionary containing special placeholder values from model that may be used in the calculation of parameter values.</param>
+    /// <returns>A dictionary with parameter names as keys and their corresponding values from the segment</returns>
+    public Dictionary<string, object> GetParameterValues(ModelBase frameworkModel, RoadNetworkModel domainModel, 
+                                                         int iPeriod, Dictionary<string, object> specialPlaceholders)
+    {
+        // Update the formula values such as PDI, SDI, Objective Value sub-parameters and Maintenance Cost before getting the parameter values
+        this.UpdateFormulaValues(frameworkModel, domainModel, iPeriod);
+
+        Dictionary<string, object> paramValues = new Dictionary<string, object>();
+        paramValues["para_adt"] = this.AverageDailyTraffic;
+        paramValues["para_hcv"] = this.HeavyVehiclesPerDay;
+
+        paramValues["para_pave_age"] = this.PavementAge;
+        paramValues["para_pave_remlife"] = this.PavementRemainingLife;
+        paramValues["para_pave_life_ach"] = this.PavementAchievedLife;
+        paramValues["para_hcv_risk"] = this.HCVRisk;
+
+        paramValues["para_surf_mat"] = this.SurfaceMaterial;
+        paramValues["para_surf_class"] = this.SurfaceClass;
+        paramValues["para_surf_cs_flag"] = this.SurfaceIsChipSealFlag;
+        paramValues["para_surf_cs_or_ac_flag"] = this.SurfaceIsChipSealOrACFlag;
+        paramValues["para_surf_road_type"] = this.SurfaceRoadType;
+        paramValues["para_surf_thick"] = this.SurfaceThickness;
+        paramValues["para_surf_layers"] = this.SurfaceNumberOfLayers;
+        paramValues["para_surf_func"] = this.SurfaceFunction;
+        paramValues["para_surf_exp_life"] = this.SurfaceExpectedLife;
+        paramValues["para_surf_age"] = this.SurfaceAge;
+        paramValues["para_surf_life_ach"] = this.SurfaceAchievedLifePercent;
+        paramValues["para_surf_remain_life"] = this.SurfaceRemainingLife;
+
+        paramValues["para_flush_pct"] = this.PctFlushing;
+        paramValues["para_flush_info"] = this.FlushingModelInfo;
+
+        paramValues["para_edgeb_pct"] = this.PctEdgeBreaks;
+        paramValues["para_edgeb_info"] = this.EdgeBreakModelInfo;
+
+        paramValues["para_scabb_pct"] = this.PctScabbing;
+        paramValues["para_scabb_info"] = this.ScabbingModelInfo;
+
+        paramValues["para_lt_cracks_pct"] = this.PctLongTransCracks;
+        paramValues["para_lt_cracks_info"] = this.LTCracksModelInfo;
+
+        paramValues["para_mesh_cracks_pct"] = this.PctMeshCracks;
+        paramValues["para_mesh_cracks_info"] = this.MeshCrackModelInfo;
+
+        paramValues["para_shove_pct"] = this.PctShoving;
+        paramValues["para_shove_info"] = this.ShovingModelInfo;
+
+        paramValues["para_poth_pct"] = this.PctPotholes;
+        paramValues["para_poth_info"] = this.PotholeModelInfo;
+
+        paramValues["para_rut_increm"] = this.RutIncrement;
+        paramValues["para_rut"] = this.RutParameterValue;
+
+        paramValues["para_naasra_increm"] = this.NaasraIncrement;
+        paramValues["para_naasra"] = this.Naasra85;
+
+        paramValues["para_sdi"] = this.PavementDistressIndex;
+        paramValues["para_pdi"] = this.SurfaceDistressIndex;
+
+        paramValues["para_obj_distress"] = this.ObjectiveDistress;
+        paramValues["para_obj_rsl"] = this.ObjectiveRemainingSurfaceLife;
+        paramValues["para_obj_rutting"] = this.ObjectiveRutting;
+        paramValues["para_obj_naasra"] = this._objectiveNaasra; 
+        paramValues["para_obj_o"] = this.ObjectiveValueRaw;
+        paramValues["para_obj"] = this.ObjectiveValue;
+        paramValues["para_obj_auc"] = this.ObjectiveAreaUnderCurve;
+
+        paramValues["para_maint_cost_perkm"] = this.MaintenanceCostPerKm;
+
+        int periodsToNextTreatment = Convert.ToInt32(specialPlaceholders["periods_to_next_treatment"]);
+        var csResult = CandidateSelector.EvaluateCandidate(this, frameworkModel, domainModel, iPeriod, periodsToNextTreatment);
+        paramValues["para_csl_status"] = csResult.Outcome;
+        paramValues["para_csl_flag"] = csResult.IsValidCandidate ? 1 : 0; // 1 for valid candidate, 0 for invalid
+
+        paramValues["para_is_treated_flag"] = this.IsTreated; // Defaults to false initially
+        paramValues["para_treat_count"] = this.TreatmentCount; // Defaults to 0 initially
+
+        // The following are Network Parameters - to be set automatically by the framework model:
+        //para_pdi_rank
+        //para_rut_rank
+        //para_sdi_rank
+        //para_sla_rank
+
+        return paramValues;
+    }
+
+    #endregion
+
 }
+
 

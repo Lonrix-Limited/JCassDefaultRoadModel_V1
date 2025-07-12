@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
 using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Treatments;
@@ -104,8 +105,9 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, 0);
             RoadSegment segment = _initialiser.InitialiseSegment(rawRow);
-            Dictionary<string, object> parameterValues = _initialiser.GetParameterValues(segment);
+            Dictionary<string, object> parameterValues = segment.GetParameterValues(this.model, this, 0, infoFromModel);
 
             //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
             double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
@@ -164,7 +166,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, prevValues, iPeriod);
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, iPeriod);
 
             RoadSegment segment = _initialiser.InitialiseSegment(rawRow);
             Dictionary<string, object> parameterValues = _initialiser.GetParameterValues(segment);

@@ -1,4 +1,5 @@
-﻿using JCass_ModelCore.Models;
+﻿using ICSharpCode.SharpZipLib.Zip;
+using JCass_ModelCore.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,6 +13,29 @@ namespace JCassDefaultRoadModel.Objects;
 /// </summary>
 public static class CalculationUtilities
 {
+
+    /// <summary>
+    /// Calculates a reset value based on the exceedance concept. If the value before treatment is below or equal to the exceedance threshold, 
+    /// it returns the value as is. If the value before treatment is greater than the exceedance threshold, it calculates a reset value by reducing 
+    /// the value by [the difference between the value before treatment and the exceedance threshold], multiplied with the improvement fraction.
+    /// </summary>
+    /// <param name="valueBeforeTreatment">Value before treatment is effected</param>
+    /// <param name="exceedanceThreshold">Exceedance threshold</param>
+    /// <param name="improvementFraction">Improvement fraction (value like 0.5, 0.8 etc)</param>
+    /// <returns>Value after treatment</returns>
+    public static double GetResetBasedOnExceedanceConcept(double valueBeforeTreatment, double exceedanceThreshold, double improvementFraction)
+    {
+        if (valueBeforeTreatment <= exceedanceThreshold)
+        {
+            return valueBeforeTreatment;
+        }
+        else
+        {
+            double resetValue = valueBeforeTreatment - (valueBeforeTreatment - exceedanceThreshold) * improvementFraction;
+            return resetValue;
+        }
+    }
+
 
     /// <summary>
     /// Utility function to calculate the Logit function on a value, where the function is

@@ -36,9 +36,9 @@ public static class RoadSegmentFactory
 
         // Flags
         segment.IsRoundaboutFlag = model.GetRawData_Text(rawRow, "file_is_roundabout_flag");
-        segment.CanTreatFlag = model.GetRawData_Text(rawRow, "file_can_treat_flag");
-        segment.CanRehabFlag = model.GetRawData_Text(rawRow, "file_can_rehab_flag");
-        segment.AsphaltOkFlag = model.GetRawData_Text(rawRow, "file_ac_ok_flag");
+        segment.CanTreatFlag = Convert.ToInt16(model.GetRawData_Text(rawRow, "file_can_treat_flag"));
+        segment.CanRehabFlag = Convert.ToInt16(model.GetRawData_Text(rawRow, "file_can_rehab_flag"));
+        segment.AsphaltOkFlag = Convert.ToInt16(model.GetRawData_Text(rawRow, "file_ac_ok_flag"));
         segment.EarliestTreatmentPeriod = model.GetRawData_Number(rawRow, "file_earliest_treat_period");
 
         // Classification

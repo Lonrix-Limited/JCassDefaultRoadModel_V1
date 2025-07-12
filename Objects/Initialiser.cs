@@ -1,5 +1,6 @@
 ﻿using JCass_ModelCore.Models;
 using JCass_ModelCore.Utilities;
+using MathNet.Numerics.Integration;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -59,103 +60,11 @@ public class Initialiser
         segment.RutIncrement = GetRutIncrementEstimate(segment);
 
         segment.Naasra85 = GetInitialNaasraValue(segment);
-        segment.NaasraIncrement = GetNaasraIncrementEstimate(segment);
-
-        segment.GetPavementDistressIndex(_frameworkModel, _domainModel, 0);
-        segment.GetSurfaceDistressIndex(_frameworkModel, _domainModel, 0);
-
-        segment.GetObjectiveAreaUnderCurve(_frameworkModel, _domainModel, 0);
-
+        segment.NaasraIncrement = GetNaasraIncrementEstimate(segment);              
 
         return segment;
     }
-
-    /// <summary>
-    /// Creates a dictionary that holds a key for each model parameter and assigns the appropriate value from the segment object.
-    /// </summary>
-    /// <param name="segment">Road Segment object from which to get model parameter values</param>
-    /// <returns>A dictionary with parameter names as keys and their corresponding values from the segment</returns>
-    public Dictionary<string, object> GetParameterValues(RoadSegment segment)
-    {
-        Dictionary<string, object> paramValues = new Dictionary<string, object>();
-        paramValues["para_adt"] = segment.AverageDailyTraffic;
-        paramValues["para_hcv"] = segment.HeavyVehiclesPerDay;
-
-        paramValues["para_pave_age"] = segment.PavementAge;
-        paramValues["para_pave_remlife"] = segment.PavementRemainingLife;
-        paramValues["para_pave_life_ach"] = segment.PavementAchievedLife;
-        paramValues["para_hcv_risk"] = segment.HCVRisk;
-
-        paramValues["para_surf_mat"] = segment.SurfaceMaterial;
-        paramValues["para_surf_class"] = segment.SurfaceClass;
-        paramValues["para_surf_cs_flag"] = segment.SurfaceIsChipSealFlag;
-        paramValues["para_surf_cs_or_ac_flag"] = segment.SurfaceIsChipSealOrACFlag;
-        paramValues["para_surf_road_type"] = segment.SurfaceRoadType;
-        paramValues["para_surf_thick"] = segment.SurfaceThickness;
-        paramValues["para_surf_layers"] = segment.SurfaceNumberOfLayers;
-        paramValues["para_surf_func"] = segment.SurfaceFunction;
-        paramValues["para_surf_exp_life"] = segment.SurfaceExpectedLife;
-        paramValues["para_surf_age"] = segment.SurfaceAge;
-        paramValues["para_surf_life_ach"] = segment.SurfaceAchievedLifePercent;
-        paramValues["para_surf_remain_life"] = segment.SurfaceRemainingLife;
-
-        paramValues["para_flush_pct"] = segment.PctFlushing;
-        paramValues["para_flush_info"] = segment.FlushingModelInfo;
-
-        paramValues["para_edgeb_pct"] = segment.PctEdgeBreaks;
-        paramValues["para_edgeb_info"] = segment.EdgeBreakModelInfo;
-
-        paramValues["para_scabb_pct"] = segment.PctScabbing;
-        paramValues["para_scabb_info"] = segment.ScabbingModelInfo;
-
-        paramValues["para_lt_cracks_pct"] = segment.PctLongTransCracks;
-        paramValues["para_lt_cracks_info"] = segment.LTCracksModelInfo;
-
-        paramValues["para_mesh_cracks_pct"] = segment.PctMeshCracks;
-        paramValues["para_mesh_cracks_info"] = segment.MeshCrackModelInfo;
-
-        paramValues["para_shove_pct"] = segment.PctShoving;
-        paramValues["para_shove_info"] = segment.ShovingModelInfo;
-
-        paramValues["para_poth_pct"] = segment.PctPotholes;
-        paramValues["para_poth_info"] = segment.PotholeModelInfo;
         
-        paramValues["para_rut_increm"] = segment.RutIncrement;
-        paramValues["para_rut"] = segment.RutParameterValue;
-
-        paramValues["para_naasra_increm"] = segment.NaasraIncrement;
-        paramValues["para_naasra"] = segment.Naasra85;
-
-        paramValues["para_sdi"] = segment.GetSurfaceDistressIndex(_frameworkModel, _domainModel, 0);
-        paramValues["para_pdi"] = segment.GetPavementDistressIndex(_frameworkModel, _domainModel, 0);
-
-        paramValues["para_obj_distress"] = segment.GetObjectiveDistress(_frameworkModel, _domainModel, 0);
-        paramValues["para_obj_rsl"] = segment.GetObjectiveRemainingSurfaceLife(_frameworkModel, _domainModel);
-        paramValues["para_obj_rutting"] = segment.GetObjectiveRutting(_frameworkModel, _domainModel);
-        paramValues["para_obj_naasra"] = segment.GetObjectiveNaasra(_frameworkModel, _domainModel);
-        paramValues["para_obj_o"] = segment.GetObjectiveValueRaw(_frameworkModel, _domainModel, 0);
-        paramValues["para_obj"] = segment.GetObjectiveValue(_frameworkModel, _domainModel, 0);
-        paramValues["para_obj_auc"] = segment.GetObjectiveAreaUnderCurve(_frameworkModel, _domainModel, 0);
-
-        paramValues["para_maint_cost_perkm"] = segment.GetMaintenanceCostPerKm(_frameworkModel, _domainModel, 0);
-
-        var csResult = CandidateSelector.EvaluateCandidate(segment, _frameworkModel, _domainModel, 0);
-        paramValues["para_csl_status"] = csResult.Outcome;
-        paramValues["para_csl_flag"] = csResult.IsValidCandidate ? 1 : 0; // 1 for valid candidate, 0 for invalid
-
-        paramValues["para_is_treated_flag"] = segment.IsTreated; // Defaults to false initially
-        paramValues["para_treat_count"] = segment.TreatmentCount; // Defaults to 0 initially
-
-        // The following are Network Parameters - to be set automatically by the framework model:
-        //para_pdi_rank
-        //para_rut_rank
-        //para_sdi_rank
-        //para_sla_rank
-
-        return paramValues;
-    }
-
-    
     private double GetPavementAge(RoadSegment segment)
     {
         try
@@ -248,11 +157,8 @@ public class Initialiser
         {
             double resetExceedenceThreshold = _domainModel.GetLookupValueNumber("reset_exceed_thresh_rut", segment.SurfaceRoadType);
             double resetImprovementFactor = _domainModel.GetLookupValueNumber("reset_perc_improv_facts_rut", segment.SurfaceRoadType);
-            
-            double ruttingResetExceedence = 0;
-            if (ruttingRaw > resetExceedenceThreshold) {ruttingResetExceedence = resetExceedenceThreshold - ruttingRaw; }
 
-            double resetValue = ruttingRaw + ruttingResetExceedence * resetImprovementFactor;
+            double resetValue = CalculationUtilities.GetResetBasedOnExceedanceConcept(ruttingRaw, resetExceedenceThreshold, resetImprovementFactor);
             return resetValue;
         }
 
@@ -317,10 +223,8 @@ public class Initialiser
             double resetExceedenceThreshold = _domainModel.GetLookupValueNumber("reset_exceed_thresh_naasra", segment.SurfaceRoadType);
             double resetImprovementFactor = _domainModel.GetLookupValueNumber("reset_perc_improv_facts_naasra", segment.SurfaceRoadType);
 
-            double naasraResetExceedence = 0;
-            if (naasraRaw > resetExceedenceThreshold) { naasraResetExceedence = resetExceedenceThreshold - naasraRaw; }
+            double resetValue = CalculationUtilities.GetResetBasedOnExceedanceConcept(naasraRaw, resetExceedenceThreshold, resetImprovementFactor);
 
-            double resetValue = naasraRaw + naasraResetExceedence * resetImprovementFactor;
             return resetValue;
 
         }
