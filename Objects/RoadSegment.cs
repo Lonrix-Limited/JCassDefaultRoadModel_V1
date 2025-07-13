@@ -775,6 +775,16 @@ public class RoadSegment
     /// </summary>
     public double SurfaceDistressIndexRank { get; set; }
 
+    /// <summary>
+    /// Percent Rank of the Rut Value for this segment
+    /// </summary>
+    public double RutRank { get; set; }
+
+    /// <summary>
+    /// Percent Rank of the Surface Life Achieved for this segment
+    /// </summary>
+    public double SurfaceLifeAchievedRank { get; set; }
+
 
     #endregion
 
@@ -813,10 +823,13 @@ public class RoadSegment
 
     #endregion
 
-    #region Treatment Related
+    #region Treatment and Candidate Selection Related
 
     private bool _isTreated = false;
     private int _treatmentCount = 0;
+
+    private int _isCandidateForTreatment = 0;
+    private string _candidateSelectionInfo = string.Empty;
 
     /// <summary>
     /// Flag to be set whenever the model applies a treatment. If this flag is set to true. Value is determined by treatment count.    
@@ -846,11 +859,26 @@ public class RoadSegment
         }
     }
 
+    /// <summary>
+    /// Flag to indicate if the segment is a candidate for treatment. This is determined by the CandidateSelector class based on various criteria.
+    /// </summary>
+    public int IsCandidateForTreatment   {  get { return _isCandidateForTreatment; } }
+
+    /// <summary>
+    /// Expanatory string for candidate selection outcome. If this is a valid candidate, it will just say 'ok', else the reason
+    /// why it is not a valid candidate will be provided.
+    /// </summary>
+    private string CandidateSelectionOutcome
+    {     
+        get { return _candidateSelectionInfo; }
+    }
+
     #endregion
 
     #region Helper Methods
 
-    public void UpdateFormulaValues(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
+    public void UpdateFormulaValues(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod,
+                                    Dictionary<string, object> specialPlaceholders)
     {
         // PDI and SDI
         _pavementDistressIndex = this.GetPavementDistressIndex(frameworkModel, domainModel, currentPeriod);
@@ -867,6 +895,13 @@ public class RoadSegment
 
         // Maintenance Cost
         _maintenanceCostPerKm = this.GetMaintenanceCostPerKm(frameworkModel, domainModel, currentPeriod);
+
+        int periodsToNextTreatment = Convert.ToInt32(specialPlaceholders["periods_to_next_treatment"]);
+        var csResult = CandidateSelector.EvaluateCandidate(this, frameworkModel, domainModel, currentPeriod, periodsToNextTreatment);
+        _isCandidateForTreatment = csResult.IsValidCandidate ? 1 : 0;
+        _candidateSelectionInfo = csResult.Outcome;
+
+
     }
 
     private double GetPavementDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
@@ -993,12 +1028,8 @@ public class RoadSegment
     /// <param name="iPeriod">Current modelling period (e.g. 1,2,3,...)</param>
     /// <param name="specialPlaceholders"> Dictionary containing special placeholder values from model that may be used in the calculation of parameter values.</param>
     /// <returns>A dictionary with parameter names as keys and their corresponding values from the segment</returns>
-    public Dictionary<string, object> GetParameterValues(ModelBase frameworkModel, RoadNetworkModel domainModel, 
-                                                         int iPeriod, Dictionary<string, object> specialPlaceholders)
-    {
-        // Update the formula values such as PDI, SDI, Objective Value sub-parameters and Maintenance Cost before getting the parameter values
-        this.UpdateFormulaValues(frameworkModel, domainModel, iPeriod);
-
+    public Dictionary<string, object> GetParameterValues()
+    {        
         Dictionary<string, object> paramValues = new Dictionary<string, object>();
         paramValues["para_adt"] = this.AverageDailyTraffic;
         paramValues["para_hcv"] = this.HeavyVehiclesPerDay;
@@ -1060,11 +1091,9 @@ public class RoadSegment
         paramValues["para_obj_auc"] = this.ObjectiveAreaUnderCurve;
 
         paramValues["para_maint_cost_perkm"] = this.MaintenanceCostPerKm;
-
-        int periodsToNextTreatment = Convert.ToInt32(specialPlaceholders["periods_to_next_treatment"]);
-        var csResult = CandidateSelector.EvaluateCandidate(this, frameworkModel, domainModel, iPeriod, periodsToNextTreatment);
-        paramValues["para_csl_status"] = csResult.Outcome;
-        paramValues["para_csl_flag"] = csResult.IsValidCandidate ? 1 : 0; // 1 for valid candidate, 0 for invalid
+                
+        paramValues["para_csl_status"] = this.CandidateSelectionOutcome;
+        paramValues["para_csl_flag"] = this.IsCandidateForTreatment;
 
         paramValues["para_is_treated_flag"] = this.IsTreated; // Defaults to false initially
         paramValues["para_treat_count"] = this.TreatmentCount; // Defaults to 0 initially

@@ -33,12 +33,11 @@ public class TreatmentsTriggerMCDA
     {
         List<TreatmentInstance> triggeredTreatments = new List<TreatmentInstance>();
 
-        int periodsToNextTreatment = Convert.ToInt16(infoFromModel[" periods_to_next_treatment"]);
-
         // Check if the segment passes the Candidate Selection checks. If not, return an empty list.
-        var csResult = CandidateSelector.EvaluateCandidate(segment, _frameworkModel, _domainModel, period, periodsToNextTreatment);
-        if (csResult.IsValidCandidate == false) return triggeredTreatments;
+        if (segment.IsCandidateForTreatment == 0) return triggeredTreatments;
 
+        int periodsToNextTreatment = Convert.ToInt16(infoFromModel[" periods_to_next_treatment"]);
+        
         // Check if second coat after Rehabilitation should be added. If so, since we are forcing it, do not look
         // for other candidate treatments
         this.AddSecondCoatIfValid(segment, period, triggeredTreatments);

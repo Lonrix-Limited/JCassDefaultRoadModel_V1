@@ -107,7 +107,12 @@ public class RoadNetworkModel : DomainModelBase
         {
             Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, 0);
             RoadSegment segment = _initialiser.InitialiseSegment(rawRow);
-            Dictionary<string, object> parameterValues = segment.GetParameterValues(this.model, this, 0, infoFromModel);
+
+            // Update the formula values such as PDI, SDI, Objective Value Parameters, Maintenance Cost and CSA Status/Outcome
+            // before getting the parameter values
+            segment.UpdateFormulaValues(this.model, this, 0, infoFromModel);
+
+            Dictionary<string, object> parameterValues = segment.GetParameterValues();
 
             //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
             double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
@@ -168,13 +173,14 @@ public class RoadNetworkModel : DomainModelBase
         {
             Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, iPeriod);
 
-            RoadSegment segment = _initialiser.InitialiseSegment(rawRow);
-            Dictionary<string, object> parameterValues = _initialiser.GetParameterValues(segment);
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel);            
+            segment.UpdateFormulaValues(this.model, this, 0, infoFromModel);  //Immediately update the formula values for the segment
 
-            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
-            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
+            TreatmentsTriggerMCDA mcdaTriggerFunction = new TreatmentsTriggerMCDA(this.model, this);
+            List<TreatmentInstance> candidates = mcdaTriggerFunction.GetTriggeredTreatments(segment, iPeriod, infoFromModel);
 
-            return newValues;  //Return model parameter values for this element
+            return candidates;
+
         }
         catch (Exception ex)
         {
@@ -208,7 +214,27 @@ public class RoadNetworkModel : DomainModelBase
     /// <returns>An array of double values representing the actual or encoded values for all model parameters after the Increment is applied</returns>
     public override double[] Increment(int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
     {
-        throw new NotImplementedException();
+        try
+        {
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, 0);
+            
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel);            
+            segment.UpdateFormulaValues(this.model, this, 0, infoFromModel);
+
+            // Apply increments here
+
+
+            Dictionary<string, object> parameterValues = segment.GetParameterValues();
+
+            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
+            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
+
+            return newValues;  //Return model parameter values for this element
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error initialising on element index {iElemIndex}. Details: {ex.Message}");
+        }
     }
         
 
