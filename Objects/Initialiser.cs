@@ -23,11 +23,11 @@ public class Initialiser
         _domainModel = domainModel ?? throw new ArgumentNullException(nameof(domainModel), "Domain model cannot be null");
     }
 
-    public RoadSegment InitialiseSegment(string[] rawRow)
+    public RoadSegment InitialiseSegment(string[] rawRow, int iElemIndex)
     {
 
         // Create a new RoadSegment object based purely on the raw data provided in the string array.
-        RoadSegment segment = RoadSegmentFactory.GetFromRawData(_frameworkModel, rawRow);
+        RoadSegment segment = RoadSegmentFactory.GetFromRawData(_frameworkModel, rawRow, iElemIndex);
 
         // Now do checks on the values and handle any anomalous data
 
@@ -36,25 +36,25 @@ public class Initialiser
         segment.SurfaceAge = GetSurfacingAge(segment); 
         
         segment.PctFlushing = _domainModel.FlushingModel.GetInitialValue(segment, segment.PctFlushing, _domainModel.Constants.BaseDate);
-        segment.FlushingModelInfo = _domainModel.FlushingModel.GetCalibratedInitialSetupValues(segment, segment.PctFlushing);
+        segment.FlushingModelInfo = _domainModel.FlushingModel.GetCalibratedInitialSetupValues(segment, segment.PctFlushing,1);
 
         segment.PctEdgeBreaks = _domainModel.EdgeBreakModel.GetInitialValue(segment, segment.PctEdgeBreaks, _domainModel.Constants.BaseDate);
-        segment.EdgeBreakModelInfo = _domainModel.EdgeBreakModel.GetCalibratedInitialSetupValues(segment, segment.PctEdgeBreaks);
+        segment.EdgeBreakModelInfo = _domainModel.EdgeBreakModel.GetCalibratedInitialSetupValues(segment, segment.PctEdgeBreaks, 1);
 
         segment.PctScabbing = _domainModel.ScabbingModel.GetInitialValue(segment, segment.PctScabbing, _domainModel.Constants.BaseDate);
-        segment.ScabbingModelInfo = _domainModel.ScabbingModel.GetCalibratedInitialSetupValues(segment, segment.PctScabbing);
+        segment.ScabbingModelInfo = _domainModel.ScabbingModel.GetCalibratedInitialSetupValues(segment, segment.PctScabbing, 0.5);
 
         segment.PctLongTransCracks = _domainModel.LTCracksModel.GetInitialValue(segment, segment.PctLongTransCracks, _domainModel.Constants.BaseDate);
-        segment.LTCracksModelInfo = _domainModel.LTCracksModel.GetCalibratedInitialSetupValues(segment, segment.PctLongTransCracks);
+        segment.LTCracksModelInfo = _domainModel.LTCracksModel.GetCalibratedInitialSetupValues(segment, segment.PctLongTransCracks, 0.5);
 
         segment.PctMeshCracks = _domainModel.MeshCrackModel.GetInitialValue(segment, segment.PctMeshCracks, _domainModel.Constants.BaseDate);
-        segment.MeshCrackModelInfo = _domainModel.MeshCrackModel.GetCalibratedInitialSetupValues(segment, segment.PctMeshCracks);
+        segment.MeshCrackModelInfo = _domainModel.MeshCrackModel.GetCalibratedInitialSetupValues(segment, segment.PctMeshCracks, 0.5);
 
         segment.PctShoving = _domainModel.ShovingModel.GetInitialValue(segment, segment.PctShoving, _domainModel.Constants.BaseDate);
-        segment.ShovingModelInfo = _domainModel.ShovingModel.GetCalibratedInitialSetupValues(segment, segment.PctShoving);
+        segment.ShovingModelInfo = _domainModel.ShovingModel.GetCalibratedInitialSetupValues(segment, segment.PctShoving, 0.5);
 
         segment.PctPotholes = _domainModel.PotholeModel.GetInitialValue(segment, segment.PctPotholes, _domainModel.Constants.BaseDate);
-        segment.PotholeModelInfo = _domainModel.PotholeModel.GetCalibratedInitialSetupValues(segment, segment.PctPotholes);
+        segment.PotholeModelInfo = _domainModel.PotholeModel.GetCalibratedInitialSetupValues(segment, segment.PctPotholes, 0.5);
 
         segment.RutParameterValue = GetInitialRuttingValue(segment);
         segment.RutIncrement = GetRutIncrementEstimate(segment);
@@ -70,7 +70,11 @@ public class Initialiser
         try
         {
             DateTime pavDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.PavementDateString);
-            double age = (_domainModel.Constants.BaseDate - pavDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
+            double age = (_domainModel.Constants.BaseDate - pavDate).TotalDays / 365.25; // Use 365.25 to account for leap years
+            
+            // To duplicate jFunction setup, we must round age to 2 decimals
+            age = Math.Round(age, 2);
+
             if (age < 0)
             {
                 _frameworkModel.LogMessage($"Pavement date for segment {segment.FeebackCode} is in the future", false);
@@ -88,7 +92,11 @@ public class Initialiser
         try
         {
             DateTime surfDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.SurfacingDateString);
-            double age = (_domainModel.Constants.BaseDate - surfDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
+            double age = (_domainModel.Constants.BaseDate - surfDate).TotalDays / 365.25; // Use 365.25 to account for leap years
+
+            // To duplicate jFunction setup, we must round age to 2 decimals
+            age = Math.Round(age, 2);
+                                                                                          
             if (age < 0)
             {
                 _frameworkModel.LogMessage($"Surfacing date for segment {segment.FeebackCode} is in the future", false);

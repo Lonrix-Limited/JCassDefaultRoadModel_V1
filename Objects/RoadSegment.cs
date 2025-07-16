@@ -3,6 +3,7 @@ using DocumentFormat.OpenXml.Office2013.Excel;
 using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Wordprocessing;
 using JCass_Core.Engineering;
+using JCass_Functions.Engineering;
 using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Models;
 using JCass_ModelCore.Treatments;
@@ -107,22 +108,22 @@ public class RoadSegment
     /// <summary>
     /// Indicates if the segment is a roundabout (not in use).
     /// </summary>
-    public string IsRoundaboutFlag { get; set; }
+    public bool IsRoundaboutFlag { get; set; }
 
     /// <summary>
     /// Can this segment be considered for treatment (client specific based on policy).
     /// </summary>
-    public int CanTreatFlag { get; set; }
+    public bool CanTreatFlag { get; set; }
 
     /// <summary>
     /// Can this segment be considered for Rehab (client specific).
     /// </summary>
-    public int CanRehabFlag { get; set; }
+    public bool CanRehabFlag { get; set; }
 
     /// <summary>
     /// Is the pavement suitable for asphalt resurfacing.
     /// </summary>
-    public int AsphaltOkFlag { get; set; }
+    public bool AsphaltOkFlag { get; set; }
 
     /// <summary>
     /// Earliest modelling period the first treatment may be triggered.
@@ -606,6 +607,81 @@ public class RoadSegment
     /// </summary>
     public double RutIncrement { get; set; }
 
+    /// <summary>
+    /// Calculates the probability of high rutting based on various parameters such as surface type, urban/rural classification, HCV risk, and distress percentages.
+    /// </summary>    
+    public double GetHighRutProbability()
+    {
+        // logit(-1.6 + 1.1 * para_surf_cs_flag + -0.4 * pcal_is_urban_flag + 0.02 * para_hcv_risk + 0.06 * para_shove_pct + 0.02 * para_mesh_cracks_pct + 0.04 * para_scabb_pct + 0.01 * para_flush_pct)
+        double value = -1.6 + 1.1 * this.SurfaceIsChipSealFlag +
+                            -0.4 * (this.UrbanRural == "u" ? 1 : 0) +
+                            0.02 * this.HCVRisk +
+                            0.06 * this.PctShoving +
+                            0.02 * this.PctMeshCracks +
+                            0.04 * this.PctScabbing +
+                            0.01 * this.PctFlushing;
+
+        return CalculationUtilities.Logit(value);
+    }
+
+    /// <summary>
+    /// Calculates the increment in rutting using an inverse distribution based on the high rut probability. This is done using a JFuncInverseDistribution 
+    /// function. Note that this function should only be called after a first treatment has been applied to the segment. Before any treatment is applied, the
+    /// historical rut rate is used. TODO: Modify this so that the historical rate will only be used for a certain number of years.
+    /// </summary>
+    /// <returns>Estimated Rut Increment in mm/year</returns>
+    public double GetRutIncrementAfterTreatment()
+    {
+        // TODO: this setup code contains (a) distribution type; (b) central tendency. Make these lookup values instead
+        // of hardcoding them here.
+        string setupCode = "a : 0.1 : incr_rutting_proba";
+        JFuncInverseDistribution incrementDistribution = new JFuncInverseDistribution(setupCode);
+        Dictionary<string, object> keyValuePairs = new Dictionary<string, object>
+        {
+            { "incr_rutting_proba", this.GetHighRutProbability() }
+        };
+        double increment = Convert.ToDouble(incrementDistribution.Evaluate(keyValuePairs));
+        return increment;
+    }
+
+    /// <summary>
+    /// Calculates the probability of high Naasra (rapid deterioration) based on various parameters such as 
+    /// surface type, urban/rural classification, HCV risk, and distress percentages.
+    /// </summary>    
+    public double GetHighNaasraProbability()
+    {
+        //logit(-2.8 + 0.6 * para_surf_cs_flag + 0.5 * pcal_is_urban_flag + 0.03 * para_hcv_risk + 0.02 * para_shove_pct + 0.01 * para_mesh_cracks_pct + 0.03 * para_scabb_pct + 1.67 * para_poth_pct + 0.09 * para_rut)
+        double value = -2.8 + 0.6 * this.SurfaceIsChipSealFlag +
+                            0.5 * (this.UrbanRural == "u" ? 1 : 0) +
+                            0.03 * this.HCVRisk +
+                            0.02 * this.PctShoving +
+                            0.01 * this.PctMeshCracks +
+                            0.03 * this.PctScabbing +
+                            1.67 * this.PctPotholes +
+                            0.09 * this.RutParameterValue;
+        return CalculationUtilities.Logit(value);
+    }
+
+    /// <summary>
+    /// Calculates the increment in Naara  using an inverse distribution based on the high Naasra probability. This is done using a JFuncInverseDistribution 
+    /// function. Note that this function should only be called after a first treatment has been applied to the segment. Before any treatment is applied, the
+    /// historical rate is used. TODO: Modify this so that the historical rate will only be used for a certain number of years.
+    /// </summary>
+    /// <returns>Estimated Rut Increment in mm/year</returns>
+    public double GetNaasraIncrementAfterTreatment()
+    {
+        // TODO: this setup code contains (a) distribution type; (b) central tendency. Make these lookup values instead
+        // of hardcoding them here.
+        string setupCode = "a : 0.9 : incr_naasra_proba";
+        JFuncInverseDistribution incrementDistribution = new JFuncInverseDistribution(setupCode);
+        Dictionary<string, object> keyValuePairs = new Dictionary<string, object>
+        {
+            { "incr_naasra_proba", this.GetHighNaasraProbability() }
+        };
+        double increment = Convert.ToDouble(incrementDistribution.Evaluate(keyValuePairs));
+        return increment;
+    }
+
     #endregion
 
     #region Visual Condition Distresses
@@ -795,13 +871,19 @@ public class RoadSegment
     /// <summary>
     /// Maintenance Cost per Km
     /// </summary>
-    public double MaintenanceCostPerKm { get { return  MaintenanceCostPerKm; } }
+    public double MaintenanceCostPerKm { get { return _maintenanceCostPerKm; } }
 
     private double GetMaintenanceCostPerKm(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
     {
         if (this.SurfaceIsChipSealOrACFlag == 0)
         {
             // If the surface is not chip seal or asphalt concrete, return 0.0
+            return 0.0;
+        }
+
+        if (PavementDistressIndex < domainModel.Constants.MaintenanceCostPDIThreshold)
+        {
+            // If the PDI is below the minimum threshold, return 0.0
             return 0.0;
         }
 
@@ -1079,8 +1161,8 @@ public class RoadSegment
         paramValues["para_naasra_increm"] = this.NaasraIncrement;
         paramValues["para_naasra"] = this.Naasra85;
 
-        paramValues["para_sdi"] = this.PavementDistressIndex;
-        paramValues["para_pdi"] = this.SurfaceDistressIndex;
+        paramValues["para_sdi"] = this.SurfaceDistressIndex;
+        paramValues["para_pdi"] = this.PavementDistressIndex;
 
         paramValues["para_obj_distress"] = this.ObjectiveDistress;
         paramValues["para_obj_rsl"] = this.ObjectiveRemainingSurfaceLife;

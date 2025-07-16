@@ -36,7 +36,7 @@ public class TreatmentsTriggerMCDA
         // Check if the segment passes the Candidate Selection checks. If not, return an empty list.
         if (segment.IsCandidateForTreatment == 0) return triggeredTreatments;
 
-        int periodsToNextTreatment = Convert.ToInt16(infoFromModel[" periods_to_next_treatment"]);
+        int periodsToNextTreatment = Convert.ToInt16(infoFromModel["periods_to_next_treatment"]);
         
         // Check if second coat after Rehabilitation should be added. If so, since we are forcing it, do not look
         // for other candidate treatments
@@ -91,7 +91,7 @@ public class TreatmentsTriggerMCDA
 
         //Note: Check for 'periods_to_next_treatment > 6' is done in CandidateSelector.EvaluateCandidate method, so we do not need to check it here again.
 
-        if (segment.AsphaltOkFlag == 0) return false; // If the segment is not suitable for asphalt preservation, do not add a treatment
+        if (segment.AsphaltOkFlag == false) return false; // If the segment is not suitable for asphalt preservation, do not add a treatment
 
         // If next surface is intended to be ChipSeal, not valid
         if (segment.NextSurfaceIsChipSeal == true) return false;
@@ -112,7 +112,7 @@ public class TreatmentsTriggerMCDA
 
         //Note: Check for 'periods_to_next_treatment > 6' is done in CandidateSelector.EvaluateCandidate method, so we do not need to check it here again.
         
-        if (segment.CanRehabFlag == 0) return false; // If the segment cannot be rehabilitated, do not add a treatment
+        if (segment.CanRehabFlag == false) return false; // If the segment cannot be rehabilitated, do not add a treatment
 
         // If next surface is not intended to be ChipSeal, do not add a treatment
         if (segment.NextSurfaceIsChipSeal == false) return false;
@@ -131,7 +131,7 @@ public class TreatmentsTriggerMCDA
 
         //Note: Check for 'periods_to_next_treatment > 6' is done in CandidateSelector.EvaluateCandidate method, so we do not need to check it here again.
 
-        if (segment.CanRehabFlag == 0) return false; // If the segment cannot be rehabilitated, do not add a treatment
+        if (segment.CanRehabFlag == false) return false; // If the segment cannot be rehabilitated, do not add a treatment
 
         // If next surface is not intended to be AC, do not consider
         if (segment.NextSurface != "ac") return false;
@@ -159,7 +159,7 @@ public class TreatmentsTriggerMCDA
         JFuncLookupNumber presealAreaFractionLookup = new JFuncLookupNumber("preseal_effective: para_pdi", _frameworkModel.Lookups);
         Dictionary<string, object> paramVals = new Dictionary<string, object>
         {
-            { "para_pdi", segment.GetPavementDistressIndex(_frameworkModel, _domainModel, iPeriod) }
+            { "para_pdi", segment.PavementDistressIndex }
         };
         presealAreaFraction = Convert.ToDouble(presealAreaFractionLookup.Evaluate(paramVals));
         if (presealAreaFraction <= 0.0) return false; // If preseal area fraction is zero or negative, do not add a treatment
@@ -185,7 +185,7 @@ public class TreatmentsTriggerMCDA
         JFuncLookupNumber presealAreaFractionLookup = new JFuncLookupNumber("preseal_effective: para_pdi", _frameworkModel.Lookups);
         Dictionary<string, object> paramVals = new Dictionary<string, object>
         {
-            { "para_pdi", segment.GetPavementDistressIndex(_frameworkModel, _domainModel, iPeriod) }
+            { "para_pdi", segment.PavementDistressIndex }
         };
         presealAreaFraction = Convert.ToDouble(presealAreaFractionLookup.Evaluate(paramVals));
         if (presealAreaFraction <= 0.0) return false; // If preseal area fraction is zero or negative, do not add a treatment
@@ -200,7 +200,7 @@ public class TreatmentsTriggerMCDA
     {
         //n : pcal_can_treat_flag = 1 AND n : pcal_next_surf_blocks_flag = 1 AND n : period >= file_earliest_treat_period AND n : para_surf_remain_life <= 1
 
-        if (segment.CanTreatFlag == 0) return; // If the segment cannot be treated, do not add a treatment
+        if (segment.CanTreatFlag == false) return; // If the segment cannot be treated, do not add a treatment
         string treatmentName = "";
 
         switch (segment.NextSurface)
@@ -289,11 +289,11 @@ public class TreatmentsTriggerMCDA
         if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;
 
         // For preservation, if PDI is above the maximum threshold, do not add a treatment
-        if (segment.GetPavementDistressIndex(_frameworkModel, _domainModel, iPeriod) > _domainModel.Constants.TSSPreserveMaxPdi) return;
+        if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdi) return;
 
-        double tssScore = TreatmentSuitabilityScorer.GetTSSForPreservationTreatment(segment, _frameworkModel, _domainModel, iPeriod);
+        double tssScore = TreatmentSuitabilityScorer.GetTSSForPreservationTreatment(segment, _domainModel, iPeriod);
 
-        double sdi = segment.GetSurfaceDistressIndex(_frameworkModel, _domainModel, iPeriod);        
+        double sdi = segment.PavementDistressIndex;        
         string reason = $"SLA={Math.Round(segment.SurfaceAchievedLifePercent, 1)}";
         string comment = $"SDI={Math.Round(sdi, 1)}, TSS={Math.Round(tssScore, 2)}";
 
@@ -316,7 +316,7 @@ public class TreatmentsTriggerMCDA
         if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;
 
         // For preservation, if PDI is above the maximum threshold, do not add a treatment
-        if (segment.GetPavementDistressIndex(_frameworkModel, _domainModel, iPeriod) > _domainModel.Constants.TSSPreserveMaxPdi) return;
+        if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdi) return;
 
         TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "Preseal_CS");
         treatments.Add(treatment);
@@ -336,7 +336,7 @@ public class TreatmentsTriggerMCDA
         if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;
 
         // For preservation, if PDI is above the maximum threshold, do not add a treatment
-        if (segment.GetPavementDistressIndex(_frameworkModel, _domainModel, iPeriod) > _domainModel.Constants.TSSPreserveMaxPdi) return;
+        if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdi) return;
 
         TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "Preseal_AC");
         treatments.Add(treatment);
@@ -344,27 +344,25 @@ public class TreatmentsTriggerMCDA
     }
 
     private void AddRehabilitationIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
-    {
-        string treatmentName = "";
+    {        
         if (segment.NextSurfaceIsChipSeal == true)
         {
-            if (this.CanDoRehabilitationOnChipSeal(segment) == false) return;
-            treatmentName = "Rehab_CS_" + segment.RoadClass.ToUpper();
+            if (this.CanDoRehabilitationOnChipSeal(segment) == false) return;            
         }
         else
         {
             if (this.CanDoRehabilitationOnAsphalt(segment) == false) return;
-            treatmentName = "Rehab_AC_" + segment.RoadClass.ToUpper();
+            
         }
 
-        double pdi = segment.GetPavementDistressIndex(_frameworkModel, _domainModel, iPeriod);
+        string treatmentName = "Rehab_" + segment.SurfaceRoadType.ToUpper(); ;
+
+        double pdi = segment.PavementDistressIndex;
         
-        double tssScore = TreatmentSuitabilityScorer.GetTSSForRehabilitation(segment, _frameworkModel, _domainModel, iPeriod);
+        double tssScore = TreatmentSuitabilityScorer.GetTSSForRehabilitation(segment, _domainModel, iPeriod);
         
         string reason = $"SLA={Math.Round(segment.SurfaceAchievedLifePercent, 1)}";
         string comment = $"PDI={Math.Round(pdi, 1)}, TSS={Math.Round(tssScore, 2)}";
-
-
 
         double quantity = segment.AreaSquareMetre;
         TreatmentInstance treatment = new TreatmentInstance(segment.ElementIndex, treatmentName, iPeriod, quantity, false, reason, comment);
@@ -375,21 +373,21 @@ public class TreatmentsTriggerMCDA
     private TreatmentInstance GetPresealTreatment(RoadSegment segment, int iPeriod, string treatmentName)
     {
         double tssScore = 0;
-        if (segment.CanRehabFlag == 1)
+        if (segment.CanRehabFlag == true)
         {
             // If this is a rehab route, then Preseal must compete with Rehab. Thus calculate the TSS for Preseal since
             // Rehab will be competing based on its TSS score.
-            tssScore = TreatmentSuitabilityScorer.GetTSSForPresealRepairs(segment, _frameworkModel, _domainModel, iPeriod);            
+            tssScore = TreatmentSuitabilityScorer.GetTSSForPresealRepairs(segment, _domainModel, iPeriod);            
         }
         else
         {
             // If this is NOT a rehab route, then Preseal is considered as a Rehabilitation. Thus the TSS in this case
             // should be based on the TSS for Rehabilitation.
-            tssScore = TreatmentSuitabilityScorer.GetTSSForRehabilitation(segment, _frameworkModel, _domainModel, iPeriod);
+            tssScore = TreatmentSuitabilityScorer.GetTSSForRehabilitation(segment, _domainModel, iPeriod);
         }
 
 
-        double pdi = segment.GetPavementDistressIndex(_frameworkModel, _domainModel, iPeriod);
+        double pdi = segment.PavementDistressIndex;
 
         string reason = $"SLA={Math.Round(segment.SurfaceAchievedLifePercent, 1)}";
         string comment = $"PDI={Math.Round(pdi, 1)}, TSS={Math.Round(tssScore, 2)}";

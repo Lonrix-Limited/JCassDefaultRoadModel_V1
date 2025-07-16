@@ -67,6 +67,10 @@ public class RoadNetworkModel : DomainModelBase
         double initValMax = this.model.GetLookupValueNumber("distress", "iv_max");
         double initValExpected = this.model.GetLookupValueNumber("distress", "iv_expected");
 
+        // Potholes have lower percentages than other distresses. It has a separate initialisaiton value
+        double initValExpectedPotholes = this.model.GetLookupValueNumber("distress", "iv_poth_expected");
+        
+
         double t100Min = this.model.GetLookupValueNumber("distress", "t100_min");
         double t100Max = this.model.GetLookupValueNumber("distress", "t100_max");
 
@@ -89,7 +93,7 @@ public class RoadNetworkModel : DomainModelBase
         ShovingModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
 
         this.PotholeModel = new PotholeModel(this.model);
-        PotholeModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+        PotholeModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpectedPotholes);
 
     }
 
@@ -106,7 +110,7 @@ public class RoadNetworkModel : DomainModelBase
         try
         {
             Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, 0);
-            RoadSegment segment = _initialiser.InitialiseSegment(rawRow);
+            RoadSegment segment = _initialiser.InitialiseSegment(rawRow, iElemIndex);
 
             // Update the formula values such as PDI, SDI, Objective Value Parameters, Maintenance Cost and CSA Status/Outcome
             // before getting the parameter values
@@ -137,7 +141,63 @@ public class RoadNetworkModel : DomainModelBase
     /// <returns>An array of double values representing the actual or encoded values for all model parameters after Reset is applied</returns>
     public override double[] Reset(TreatmentInstance treatment, int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
     {
-        throw new NotImplementedException();
+        try
+        {
+            Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
+
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);
+            segment.UpdateFormulaValues(this.model, this, 0, infoFromModel);
+
+            // Apply Resets
+            RoadSegment resettedSegment = _resetter.Reset(segment, iPeriod, treatment);
+            resettedSegment.UpdateFormulaValues(this.model, this, 0, infoFromModel);
+
+            Dictionary<string, object> parameterValues = resettedSegment.GetParameterValues();
+
+            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
+            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
+
+            return newValues;  //Return model parameter values for this element
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error Resetting element index {iElemIndex}. Details: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Evaluates the Increment for all parameters for the element in the current period. This method is called from the Framework Model 
+    /// for elements that do not have a treatment selected after optimisation in the current period. 
+    /// </summary>
+    /// <param name="iElemIndex">Zero-based index of the element</param>
+    /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
+    /// <param name="rawRow">Input row associated with this element</param>
+    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
+    /// <returns>An array of double values representing the actual or encoded values for all model parameters after the Increment is applied</returns>
+    public override double[] Increment(int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
+    {
+        try
+        {
+            Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
+
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);
+            segment.UpdateFormulaValues(this.model, this, 0, infoFromModel);
+
+            // Apply increments here
+            RoadSegment incrementedSegment = _incrementer.Increment(segment, iPeriod);
+            incrementedSegment.UpdateFormulaValues(this.model, this, 0, infoFromModel);
+
+            Dictionary<string, object> parameterValues = incrementedSegment.GetParameterValues();
+
+            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
+            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
+
+            return newValues;  //Return model parameter values for this element
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error Incrementing element index {iElemIndex}. Details: {ex.Message}");
+        }
     }
 
     /// <summary>
@@ -171,9 +231,9 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, iPeriod);
+            Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel);            
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);            
             segment.UpdateFormulaValues(this.model, this, 0, infoFromModel);  //Immediately update the formula values for the segment
 
             TreatmentsTriggerMCDA mcdaTriggerFunction = new TreatmentsTriggerMCDA(this.model, this);
@@ -200,42 +260,23 @@ public class RoadNetworkModel : DomainModelBase
     /// <returns>A Treatment Instance object representing Routine Maintenance</returns>
     public override TreatmentInstance GetTriggeredMaintenance(int iElemIndex, int iPeriod, double[] paramValues, string[] rawData)
     {
-        throw new NotImplementedException();
-    }
-
-    /// <summary>
-    /// Evaluates the Increment for all parameters for the element in the current period. This method is called from the Framework Model 
-    /// for elements that do not have a treatment selected after optimisation in the current period. 
-    /// </summary>
-    /// <param name="iElemIndex">Zero-based index of the element</param>
-    /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="rawRow">Input row associated with this element</param>
-    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
-    /// <returns>An array of double values representing the actual or encoded values for all model parameters after the Increment is applied</returns>
-    public override double[] Increment(int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
-    {
         try
         {
-            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, 0);
-            
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel);            
-            segment.UpdateFormulaValues(this.model, this, 0, infoFromModel);
+            Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawData, paramValues, iPeriod);
 
-            // Apply increments here
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);
+            segment.UpdateFormulaValues(this.model, this, 0, infoFromModel);  //Immediately update the formula values for the segment
 
+            return RoutineMaintenance.GetRoutineMaintenance(segment, iPeriod);
 
-            Dictionary<string, object> parameterValues = segment.GetParameterValues();
-
-            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
-            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
-
-            return newValues;  //Return model parameter values for this element
         }
         catch (Exception ex)
         {
-            throw new Exception($"Error initialising on element index {iElemIndex}. Details: {ex.Message}");
+            throw new Exception($"Error triggering Routine Maintenance on element index {iElemIndex}. Details: {ex.Message}");
         }
     }
+
+    
         
 
     /// <summary>

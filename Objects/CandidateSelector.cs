@@ -33,7 +33,7 @@ public static class CandidateSelector
 		{
             // First check for all prelimiary conditions that, if met, will cancel or allow the candidate to proceed (e.g. second-coat needed,
             // earliest treatment period, minimum surface age, etc.)
-            CandidateSelectionResult prelimCheckResult = EvaluatePreliminaries(segment, frameworkModel, domainModel, currentPeriod, int periodsToNextTreatment);
+            CandidateSelectionResult prelimCheckResult = EvaluatePreliminaries(segment, frameworkModel, domainModel, currentPeriod, periodsToNextTreatment);
             if (prelimCheckResult != null)
             {
                 return prelimCheckResult; // If any preliminary checks fail, return the result

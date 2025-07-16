@@ -33,6 +33,9 @@ public class Resetter
         bool isRehab = treatment.TreatmentName.ToLower().StartsWith("rehab");
         bool isPreseal = treatment.TreatmentName.ToLower().StartsWith("preseal");
 
+        // Reset (or increment where not applicable) all properties related to model parameters
+        // Keep the code same order as the model parameter list
+
         segment.AverageDailyTraffic = segment.AverageDailyTraffic * (1 + segment.TrafficGrowthPercent / 100);
         // No need to reset HCV count as it is automatically calculated based on the AverageDailyTraffic and HCVPercent
 
@@ -47,28 +50,34 @@ public class Resetter
             segment.PavementRemainingLife = segment.PavementRemainingLife - 1;
         }
 
-        // No need to update HCV Risk because it is automatically calculated based on the HCV and Pavement Life Achieved
+        // No need to update Pavement Life Achieved and HCV Risk because it is automatically calculated based on the HCV and Pavement Life Achieved
 
-        segment.SurfaceClass = _frameworkModel.GetLookupValueText("treat_surf_class", treatment.TreatmentName);
         segment.SurfaceMaterial = _frameworkModel.GetLookupValueText("treat_surf_materials", treatment.TreatmentName);
-        segment.SurfaceFunction = this.GetSurfaceFunction(treatment.TreatmentName, isPreseal, isRehab, segment.SurfaceFunction);
-
+        segment.SurfaceClass = _frameworkModel.GetLookupValueText("treat_surf_class", treatment.TreatmentName);        
+        
         // If rehab, number of surfacing becomes 1. Otherwise, increase number of surfacings but only if it is a chipseal. If AC, then it remains the same.
-        segment.SurfaceNumberOfLayers = isRehab ? 1 : segment.SurfaceIsChipSealFlag == 1 ? segment.SurfaceNumberOfLayers + 1 : segment.SurfaceNumberOfLayers;
+        
         
         if (isRehab)
         {
             //Surface Thickness to reset to, based on lookup of surface material type applied if treatment is pavement renewal (Rehab)
             segment.SurfaceThickness = _frameworkModel.GetLookupValueNumber("surf_thickness_new", segment.SurfaceMaterial);
+            segment.SurfaceNumberOfLayers = 1;  // Reset number of surface layer count
         }
         else
         {
             //Surface Thickness to add, based on lookup of surface material type applied if treatment is surface renewal
             segment.SurfaceThickness = segment.SurfaceThickness + _frameworkModel.GetLookupValueNumber("surf_thickness_add", segment.SurfaceMaterial);
+
+            // If this is a chipseal, increase number of layers. If this is an AC, then it remains the same.
+            segment.SurfaceNumberOfLayers = segment.SurfaceIsChipSealFlag == 1 ? segment.SurfaceNumberOfLayers + 1 : segment.SurfaceNumberOfLayers;
         }
+
+        segment.SurfaceFunction = this.GetSurfaceFunction(treatment.TreatmentName, isPreseal, isRehab, segment.SurfaceFunction);
         
-        segment.SurfaceAge = isPreseal ? segment.SurfaceAge + 1 : 0;  //All treatments reset surface age to zero except if Preseal
         segment.SurfaceExpectedLife = this.GetExpectedSurfaceLife(segment);
+        segment.SurfaceAge = isPreseal ? segment.SurfaceAge + 1 : 0;  //All treatments reset surface age to zero except if Preseal
+        // Note: surface life achieved and surface remaining life are automatically calculated based on the surface age and expected life
 
         // Reset visual distresses
         segment.PctFlushing = _domainModel.FlushingModel.GetValueAfterReset(segment, segment.PctFlushing,treatmentCategory);
@@ -92,13 +101,17 @@ public class Resetter
         segment.PctPotholes = _domainModel.PotholeModel.GetValueAfterReset(segment, segment.PctPotholes, treatmentCategory);
         segment.PotholeModelInfo = _domainModel.PotholeModel.GetResettedSetupValues(segment, segment.PctPotholes, treatmentCategory);
 
-
         segment.RutParameterValue = this.GetResetttedRut(segment, isRehab);
+        segment.RutIncrement = segment.GetRutIncrementAfterTreatment();
+        
         segment.Naasra85 = this.GetResetttedNaasra(segment, isRehab);
+        segment.NaasraIncrement = segment.GetNaasraIncrementAfterTreatment();
 
         // Increase the treatment count for the segment. This will also mark the treatment as treated, and reset the 
         // historical maintenance quantities so that it no longer influences PDI and SDI calculations.
         segment.TreatmentCount++;
+
+        // Ranking parameters will be calculated by the framework model
 
         return segment;
 
@@ -130,21 +143,21 @@ public class Resetter
         if (segment.SurfaceClass == "other") return segment.SurfaceExpectedLife; 
 
         string lookupKey = $"{segment.SurfaceFunction}_{segment.SurfaceMaterial}_{segment.RoadClass}";
-        bool keyExists = _frameworkModel.Lookups["surf_expected_life"].ContainsKey(lookupKey);
+        bool keyExists = _frameworkModel.Lookups["surf_life_exp"].ContainsKey(lookupKey);
         if (keyExists)
         {
-            return _frameworkModel.GetLookupValueNumber("surf_expected_life", lookupKey);
+            return _frameworkModel.GetLookupValueNumber("surf_life_exp", lookupKey);
         }
         else
         {
             _frameworkModel.LogMessage($"Expected surface life lookup key '{lookupKey}' not found. Using default value for {segment.SurfaceClass}.", true);
             if (segment.SurfaceClass == "cs") // Chipseal
             {
-                return _frameworkModel.GetLookupValueNumber("surf_expected_life", "cs_undefined");
+                return _frameworkModel.GetLookupValueNumber("surf_life_exp", "cs_undefined");
             }
             else if (segment.SurfaceClass == "ac") // Asphalt Concrete
             {
-                return _frameworkModel.GetLookupValueNumber("surf_expected_life", "ac_undefined");
+                return _frameworkModel.GetLookupValueNumber("surf_life_exp", "ac_undefined");
             }            
         }
         throw new KeyNotFoundException($"Expected surface life not found for {segment.FeebackCode}. Surface class = '{segment.SurfaceClass}'.");
@@ -180,12 +193,12 @@ public class Resetter
     {
         if (segment.SurfaceIsChipSealOrACFlag == 0)
         {
-            return segment.RutParameterValue; // Rut remains constant for non ChipSeal or AC surfaces
+            return segment.Naasra85; // Rut remains constant for non ChipSeal or AC surfaces
         }
 
         if (segment.SurfaceFunction == "1a")
         {
-            return segment.RutParameterValue; // This indicates preseal has just been applied, so no reset
+            return segment.Naasra85; // This indicates preseal has just been applied, so no reset
         }
 
         if (isRehab)
@@ -196,7 +209,7 @@ public class Resetter
         {
             double exceedanceThreshold = _frameworkModel.GetLookupValueNumber("reset_exceed_thresh_naasra", segment.SurfaceRoadType);
             double improvementFactor = _frameworkModel.GetLookupValueNumber("reset_perc_improv_facts_naasra", segment.SurfaceRoadType);
-            return CalculationUtilities.GetResetBasedOnExceedanceConcept(segment.RutParameterValue, exceedanceThreshold, improvementFactor);
+            return CalculationUtilities.GetResetBasedOnExceedanceConcept(segment.Naasra85, exceedanceThreshold, improvementFactor);
         }
 
 

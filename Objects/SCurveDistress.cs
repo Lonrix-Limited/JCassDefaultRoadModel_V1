@@ -180,7 +180,7 @@ public abstract class SCurveDistress
     /// </summary>    
     /// <param name="observedValue">Current observed value for the distress</param>    
     /// <returns>Values in concatenated string with [AADI_InitialValue_T100]</returns>
-    public string GetCalibratedInitialSetupValues(RoadSegment segment, double observedValue)
+    public string GetCalibratedInitialSetupValues(RoadSegment segment, double observedValue, double errorTolerance)
     {
         double aadiExpected = this.GetAadiExpectedValue(segment);
         double t100Expected = this.GetT100ExpectedValue(segment);
@@ -188,9 +188,9 @@ public abstract class SCurveDistress
         double initialValueExpected = _InitValExpected; // make a copy - do not modify the base value!
 
         SShapedModelHelper.CalibrateFactors(segment.SurfaceAge, observedValue, _T100Min, _T100Max, _AADIMin, _AADIMax, _InitValMin, _InitValMax,
-            ref t100Expected, ref aadiExpected, ref initialValueExpected);
+            ref t100Expected, ref aadiExpected, ref initialValueExpected, errorTolerance);
 
-        return $"{aadiExpected}_{initialValueExpected}_{t100Expected}";
+        return $"{Math.Round(aadiExpected,2)}_{Math.Round(initialValueExpected,2)}_{Math.Round(t100Expected,2)}";
     }
 
     /// <summary>
@@ -234,7 +234,7 @@ public abstract class SCurveDistress
         string resetCode = "";
         if (treatmentCategory.Contains("rehab"))
         {
-            resetCode = $"{aadiExpected}_{_InitValExpected}_{resetT100}";
+            resetCode = $"{Math.Round(aadiExpected,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(resetT100,2)}";
         }
         else if (treatmentCategory.Contains("holding"))
         {
@@ -244,12 +244,12 @@ public abstract class SCurveDistress
             // Ensure that AADI for holding action is not less than allowed minimum or more than value for Rehab (expected AADI)
             aadiForHolding = Math.Clamp(aadiForHolding, _AADIMin, aadiExpected);
 
-            resetCode = $"{aadiForHolding}_{_InitValExpected}_{t100Resurfacing}";
+            resetCode = $"{Math.Round(aadiForHolding,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(t100Resurfacing,2)}";
         }
         else
         {
             //Assume Resurfacing
-            resetCode = $"{aadiResurfacing}_{_InitValExpected}_{t100Resurfacing}";
+            resetCode = $"{Math.Round(aadiResurfacing,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(t100Resurfacing,2)}";
         }
 
         return resetCode;
@@ -366,7 +366,7 @@ public class FlushingModel : SCurveDistress
         double aadiExpected = this.GetAadiExpectedValue(segment);
         double resetT100 = _T100Max * (1 - this.DistressProbability(segment));
         
-        string resetCode = $"{aadiExpected}_{_InitValExpected}_{resetT100}"; ;
+        string resetCode = $"{Math.Round(aadiExpected,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(resetT100,2)}"; ;
         
         return resetCode;
     }
@@ -428,8 +428,8 @@ public class EdgeBreakModel : SCurveDistress
         // Expected new values for AADI and T100 
         double aadiExpected = this.GetAadiExpectedValue(segment);
         double resetT100 = _T100Max * (1 - this.DistressProbability(segment));
-
-        string resetCode = $"{aadiExpected}_{_InitValExpected}_{resetT100}"; ;
+        
+        string resetCode = $"{Math.Round(aadiExpected, 2)}_{Math.Round(_InitValExpected, 2)}_{Math.Round(resetT100, 2)}";
 
         return resetCode;
     }
@@ -492,7 +492,7 @@ public class ScabbingModel : SCurveDistress
         double aadiExpected = this.GetAadiExpectedValue(segment);
         double resetT100 = _T100Max * (1 - this.DistressProbability(segment));
 
-        string resetCode = $"{aadiExpected}_{_InitValExpected}_{resetT100}"; ;
+        string resetCode = $"{Math.Round(aadiExpected,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(resetT100,2)}"; 
 
         return resetCode;
     }

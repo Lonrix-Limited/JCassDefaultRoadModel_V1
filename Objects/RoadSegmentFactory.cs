@@ -18,9 +18,11 @@ public static class RoadSegmentFactory
     /// <param name="model">Model object from which to refer the Raw Data schema</param>
     /// <param name="rawRow">Row of raw data values for each column in the schema</param>
     /// <returns></returns>
-    public static RoadSegment GetFromRawData(ModelBase model, string[] rawRow)
+    public static RoadSegment GetFromRawData(ModelBase model, string[] rawRow, int elementIndex)
     {
         RoadSegment segment = new RoadSegment();
+
+        segment.ElementIndex = elementIndex; // Set the element index for this segment
 
         // Identification
         segment.SegmentName = model.GetRawData_Text(rawRow, "file_seg_name");
@@ -36,10 +38,10 @@ public static class RoadSegmentFactory
         segment.WidthInMetre = segment.AreaSquareMetre / segment.LengthInMetre;
 
         // Flags
-        segment.IsRoundaboutFlag = model.GetRawData_Text(rawRow, "file_is_roundabout_flag");
-        segment.CanTreatFlag = Convert.ToInt16(model.GetRawData_Text(rawRow, "file_can_treat_flag"));
-        segment.CanRehabFlag = Convert.ToInt16(model.GetRawData_Text(rawRow, "file_can_rehab_flag"));
-        segment.AsphaltOkFlag = Convert.ToInt16(model.GetRawData_Text(rawRow, "file_ac_ok_flag"));
+        segment.IsRoundaboutFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_is_roundabout_flag"));
+        segment.CanTreatFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_can_treat_flag"));
+        segment.CanRehabFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_can_rehab_flag"));
+        segment.AsphaltOkFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_ac_ok_flag"));
         segment.EarliestTreatmentPeriod = model.GetRawData_Number(rawRow, "file_earliest_treat_period");
 
         // Classification
@@ -110,12 +112,14 @@ public static class RoadSegmentFactory
     /// <param name="inputAndParameterValues">Dictionary provided by model containing all raw input values and parameter values with
     /// keys mapping to either raw input columns or to parameter names/codes and the Values mapping to the corresponding values./param>
     /// <returns></returns>
-    public static RoadSegment GetFromModel(ModelBase frameworkModel, Dictionary<string, object> inputAndParameterValues)
+    public static RoadSegment GetFromModel(ModelBase frameworkModel, Dictionary<string, object> inputAndParameterValues, int elementIndex)
     {
         RoadSegment segment = new RoadSegment();
 
         //First set all properties that are still dependend on the raw input data and that do not change over
         // the modelling periods
+
+        segment.ElementIndex = elementIndex; // Set the element index for this segment
 
         // Identification
         segment.SegmentName = Convert.ToString(inputAndParameterValues["file_seg_name"]);
@@ -131,10 +135,10 @@ public static class RoadSegmentFactory
         segment.WidthInMetre = segment.AreaSquareMetre / segment.LengthInMetre;
 
         // Flags
-        segment.IsRoundaboutFlag = Convert.ToString(inputAndParameterValues["file_is_roundabout_flag"];
-        segment.CanTreatFlag = Convert.ToInt32(inputAndParameterValues["file_can_treat_flag"]);
-        segment.CanRehabFlag = Convert.ToInt32(inputAndParameterValues["file_can_rehab_flag"]);
-        segment.AsphaltOkFlag = Convert.ToInt32(inputAndParameterValues["file_earliest_treat_period"]);
+        segment.IsRoundaboutFlag = Convert.ToBoolean(inputAndParameterValues["file_is_roundabout_flag"]);
+        segment.CanTreatFlag = Convert.ToBoolean(inputAndParameterValues["file_can_treat_flag"]);
+        segment.CanRehabFlag = Convert.ToBoolean(inputAndParameterValues["file_can_rehab_flag"]);
+        segment.AsphaltOkFlag = Convert.ToBoolean(inputAndParameterValues["file_earliest_treat_period"]);
 
         // Classification
         segment.UrbanRural = Convert.ToString(inputAndParameterValues["file_urban_rural"]).ToLower();
