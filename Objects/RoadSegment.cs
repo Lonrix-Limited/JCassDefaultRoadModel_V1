@@ -507,7 +507,7 @@ public class RoadSegment
             // Calculate the percentage of faults and maintenance based on the area.
             if (this.AreaSquareMetre > 0)
             {
-                _faultsAndMaintenanceSurfacingM2 = (value / this.AreaSquareMetre) * 100.0;
+                _faultsAndMaintenanceSurfacingPercent = (value / this.AreaSquareMetre) * 100.0;
             }
             else
             {
@@ -978,12 +978,32 @@ public class RoadSegment
         // Maintenance Cost
         _maintenanceCostPerKm = this.GetMaintenanceCostPerKm(frameworkModel, domainModel, currentPeriod);
 
+        this.UpdateCandidateSelectionResult(frameworkModel, domainModel, currentPeriod, specialPlaceholders);
+    }
+
+    public void UpdateCandidateSelectionResult(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod,
+                                               Dictionary<string, object> specialPlaceholders)
+    {
         int periodsToNextTreatment = Convert.ToInt32(specialPlaceholders["periods_to_next_treatment"]);
         var csResult = CandidateSelector.EvaluateCandidate(this, frameworkModel, domainModel, currentPeriod, periodsToNextTreatment);
         _isCandidateForTreatment = csResult.IsValidCandidate ? 1 : 0;
         _candidateSelectionInfo = csResult.Outcome;
+    }
 
-
+    public void UpdateFormulaValuesFromParameters(Dictionary<string, object> parameterValues)
+    {        
+        _surfaceDistressIndex = Convert.ToDouble(parameterValues["para_sdi"]); 
+        _pavementDistressIndex = Convert.ToDouble(parameterValues["para_pdi"]); 
+        _objectiveDistressIndex = Convert.ToDouble(parameterValues["para_obj_distress"]); 
+        _objectiveRemainingSurfaceLife = Convert.ToDouble(parameterValues["para_obj_rsl"]); 
+        _objectiveRutting = Convert.ToDouble(parameterValues["para_obj_rutting"]); 
+        _objectiveNaasra = Convert.ToDouble(parameterValues["para_obj_naasra"]); 
+        _objectiveValueRaw = Convert.ToDouble(parameterValues["para_obj_o"]);
+        _objectiveValue = Convert.ToDouble(parameterValues["para_obj"]);
+        _objectiveAreaUnderCurve = Convert.ToDouble(parameterValues["para_obj_auc"]);
+        _maintenanceCostPerKm = Convert.ToDouble(parameterValues["para_maint_cost_perkm"]); 
+        _candidateSelectionInfo = Convert.ToString(parameterValues["para_csl_status"]); 
+        _isCandidateForTreatment = Convert.ToInt32(parameterValues["para_csl_flag"]); 
     }
 
     private double GetPavementDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
@@ -1035,7 +1055,7 @@ public class RoadSegment
     private double GetObjectiveRutting(ModelBase frameworkModel, RoadNetworkModel domainModel)
     {
         double rutExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", this.SurfaceRoadType);
-        double objRutPre1 = this.RutIncrement - rutExceedanceThreshold;
+        double objRutPre1 = this.RutParameterValue - rutExceedanceThreshold;
         //0.55 * post_obj_rutting_pre1 + -1.65
         double objRutPre = 0.55 * objRutPre1 - 1.65;
 

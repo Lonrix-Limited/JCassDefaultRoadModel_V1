@@ -75,7 +75,7 @@ public static class CalculationUtilities
     public static double GetSurfacingDistressIndex(RoadSegment segment, ModelBase frameworkModel, RoadNetworkModel roadModel, int currentPeriod)
     {
         double boostedPotholes = segment.PctPotholes * roadModel.Constants.PotholeBoostFactor;
-        bool isShortTerm = roadModel.Constants.CSShortTermPeriod <= currentPeriod;
+        bool isShortTerm = currentPeriod <= roadModel.Constants.CSShortTermPeriod;
         if (isShortTerm)
         {
             return GetSurfacingDistressIndexShortTerm(segment, frameworkModel, boostedPotholes);

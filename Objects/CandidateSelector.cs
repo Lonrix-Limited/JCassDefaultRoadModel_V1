@@ -111,14 +111,14 @@ public static class CandidateSelector
     /// </summary>    
     private static CandidateSelectionResult EvaluatePreliminaries(RoadSegment segment, ModelBase frameworkModel, RoadNetworkModel domainModel, 
                                                                    int currentPeriod, int periodsToNextTreatment)
-    {
-        //Does this segment require a second coat now? If so, it is a valid candidate, so look no further.
-        if (segment.SecondCoatNeeded) { return new CandidateSelectionResult(true, "Second-Coat Needed"); }
-
+    {        
         if (periodsToNextTreatment <= 6) // If the next treatment is within 6 periods, we do not consider this segment for treatment
         {
             return new CandidateSelectionResult(false, $"Next treatment in {periodsToNextTreatment} periods: too soon");
         }
+
+        //Does this segment require a second coat now? If so, it is a valid candidate, so look no further.
+        if (segment.SecondCoatNeeded) { return new CandidateSelectionResult(true, "Second-Coat Needed"); }
 
         // Is the specified earliest treatment period for the segment reached?
         int adjustedPeriod = currentPeriod + 1;  //Adjusted modelling period to account for a post calc lag in para csl flag
@@ -162,18 +162,18 @@ public static class CandidateSelector
 
 
         int count1Over = 0;
-        if (flushLength >= domainModel.Constants.CSShortSegDistress1Limit) count1Over++;
-        if (scabLength >= domainModel.Constants.CSShortSegDistress1Limit) count1Over++;
-        if (meshCrackLength >= domainModel.Constants.CSShortSegDistress1Limit) count1Over++;
-        if (shoveLength >= domainModel.Constants.CSShortSegDistress1Limit) count1Over++;
+        if (flushLength > domainModel.Constants.CSShortSegDistress1Limit) count1Over++;
+        if (scabLength > domainModel.Constants.CSShortSegDistress1Limit) count1Over++;
+        if (meshCrackLength > domainModel.Constants.CSShortSegDistress1Limit) count1Over++;
+        if (shoveLength > domainModel.Constants.CSShortSegDistress1Limit) count1Over++;
 
 
         //Count the times each distress is over a specified length (the specified length comes from lookup 'short_seg_distress2_limit')
         int count2Over = 0;
-        if (flushLength >= domainModel.Constants.CSShortSegDistress2Limit) count2Over++;
-        if (scabLength >= domainModel.Constants.CSShortSegDistress2Limit) count2Over++;
-        if (meshCrackLength >= domainModel.Constants.CSShortSegDistress2Limit) count2Over++;
-        if (shoveLength >= domainModel.Constants.CSShortSegDistress2Limit) count2Over++;
+        if (flushLength > domainModel.Constants.CSShortSegDistress2Limit) count2Over++;
+        if (scabLength > domainModel.Constants.CSShortSegDistress2Limit) count2Over++;
+        if (meshCrackLength > domainModel.Constants.CSShortSegDistress2Limit) count2Over++;
+        if (shoveLength > domainModel.Constants.CSShortSegDistress2Limit) count2Over++;
 
         if (count1Over > 0 || count2Over > 1)
         {
@@ -199,7 +199,7 @@ public static class CandidateSelector
         double slaThreshold = slaThresholdModel.GetValue(segment.SurfaceAchievedLifePercent);
 
         // For longer sections only - detect if the sum of key distresses is greater than the distress percentage identified in the piecewise linear function above
-        if (distressPercent >= slaThreshold)
+        if (distressPercent > slaThreshold)
         {
             return true;
         }

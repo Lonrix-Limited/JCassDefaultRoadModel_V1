@@ -23,6 +23,10 @@ public static class RoadSegmentFactory
         RoadSegment segment = new RoadSegment();
 
         segment.ElementIndex = elementIndex; // Set the element index for this segment
+        if (elementIndex == 123)
+        {
+            int kk = 9;
+        }
 
         // Identification
         segment.SegmentName = model.GetRawData_Text(rawRow, "file_seg_name");
@@ -138,7 +142,7 @@ public static class RoadSegmentFactory
         segment.IsRoundaboutFlag = Convert.ToBoolean(inputAndParameterValues["file_is_roundabout_flag"]);
         segment.CanTreatFlag = Convert.ToBoolean(inputAndParameterValues["file_can_treat_flag"]);
         segment.CanRehabFlag = Convert.ToBoolean(inputAndParameterValues["file_can_rehab_flag"]);
-        segment.AsphaltOkFlag = Convert.ToBoolean(inputAndParameterValues["file_earliest_treat_period"]);
+        segment.AsphaltOkFlag = Convert.ToBoolean(inputAndParameterValues["file_ac_ok_flag"]);
 
         // Classification
         segment.UrbanRural = Convert.ToString(inputAndParameterValues["file_urban_rural"]).ToLower();
@@ -236,7 +240,7 @@ public static class RoadSegmentFactory
         segment.Naasra85 = Convert.ToDouble(inputAndParameterValues["para_naasra"]);  // Updated Naasra value
 
         // Calculated values (to be calculated after this factor output returns):
-        // para_sdi
+        // para_sdi        
         //para_pdi
         //para_obj_distress
         //para_obj_rsl
@@ -249,13 +253,15 @@ public static class RoadSegmentFactory
         //para_csl_status
         //para_csl_flag
 
+        segment.UpdateFormulaValuesFromParameters(inputAndParameterValues);
+
         segment.TreatmentCount = Convert.ToInt32(inputAndParameterValues["para_treat_count"]); // Will update IsTreated flag
         // para_is_treated_flag = automatically calculated based on treatment count
 
-        segment.PavementDistressIndexRank = Convert.ToInt32(inputAndParameterValues["para_pdi_rank"]);
+        segment.PavementDistressIndexRank = Convert.ToDouble(inputAndParameterValues["para_pdi_rank"]);
         segment.RutRank = Convert.ToInt32(inputAndParameterValues["para_rut_rank"]);
-        segment.SurfaceDistressIndexRank = Convert.ToInt32(inputAndParameterValues["para_sdi_rank"]);
-        segment.SurfaceLifeAchievedRank = Convert.ToInt32(inputAndParameterValues["para_sla_rank"]);
+        segment.SurfaceDistressIndexRank = Convert.ToDouble(inputAndParameterValues["para_sdi_rank"]);
+        segment.SurfaceLifeAchievedRank = Convert.ToDouble(inputAndParameterValues["para_sla_rank"]);
 
         // Ensure that the method to re-calculate index values are called on return
 

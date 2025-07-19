@@ -18,8 +18,9 @@ public static class TreatmentSuitabilityScorer
         string tssModelSetup = $"{domainModel.Constants.TSSPreserveSdiRank},0|100,100";
         PieceWiseLinearModelGeneric tssModel = new PieceWiseLinearModelGeneric(tssModelSetup, true);
 
-        double sdi = segment.SurfaceDistressIndex;
-        double tssScore = tssModel.GetValue(segment.SurfaceDistressIndexRank);   //Use RANK, not the SDI itself!!
+        double pdi = segment.PavementDistressIndex;
+        double tssScore1 = tssModel.GetValue(segment.SurfaceDistressIndexRank);   //Use RANK, not the SDI itself!!
+        double tssScore = tssScore1 - 0.5*pdi;
         return tssScore;
     }
 
@@ -30,7 +31,7 @@ public static class TreatmentSuitabilityScorer
         double excessRutPenalty = segment.RutParameterValue > excessRutThreshold ? (segment.RutParameterValue - excessRutThreshold) * rutPenaltyFactor : 0.0;
 
         string tssModelSetup = $"{domainModel.Constants.TSSRehabPdiRank},0|100,100";
-        PieceWiseLinearModelGeneric tssModel = new PieceWiseLinearModelGeneric(tssModelSetup, true);
+        PieceWiseLinearModelGeneric tssModel = new PieceWiseLinearModelGeneric(tssModelSetup, false);
 
         double pdi = segment.PavementDistressIndex;
         double tssScore1 = tssModel.GetValue(segment.PavementDistressIndexRank);   //Use RANK, not the PDI itself!!

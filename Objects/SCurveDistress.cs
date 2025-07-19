@@ -182,6 +182,12 @@ public abstract class SCurveDistress
     /// <returns>Values in concatenated string with [AADI_InitialValue_T100]</returns>
     public string GetCalibratedInitialSetupValues(RoadSegment segment, double observedValue, double errorTolerance)
     {
+        //Debug for specific element. Change element index as needed
+        if (segment.ElementIndex == 123)
+        {
+            int kk = 9;   //put breakpoint on this line
+        }
+
         double aadiExpected = this.GetAadiExpectedValue(segment);
         double t100Expected = this.GetT100ExpectedValue(segment);
 
@@ -339,7 +345,7 @@ public class FlushingModel : SCurveDistress
         //logit(-11.95 + 10 * para_surf_cs_flag + -0.37 * pcal_is_urban_flag + 0.05 * para_hcv_risk)
         double value = -11.95
             + (10 * (segment.SurfaceIsChipSealFlag))
-            + (-0.37 * (segment.UrbanRural == "urban" ? 1 : 0))
+            + (-0.37 * (segment.UrbanRural == "u" ? 1 : 0))
             + (0.05 * segment.HCVRisk);
         return Logit(value);
     }
@@ -403,7 +409,7 @@ public class EdgeBreakModel : SCurveDistress
         //logit(4 + -1 * pcal_gen_width + -10 * pcal_is_urban_flag)
         double value = 4
             + (-1 * segment.WidthInMetre)
-            + (-10 * (segment.UrbanRural == "urban" ? 1 : 0));
+            + (-10 * (segment.UrbanRural == "u" ? 1 : 0));
         return Logit(value);
     }
 
@@ -465,7 +471,7 @@ public class ScabbingModel : SCurveDistress
         //logit(-2.89 + 1.71 * para_surf_cs_flag + 0.62 * pcal_is_urban_flag + 0.06 * para_hcv_risk)
         double value = -2.89
             + (1.71 * (segment.SurfaceIsChipSealFlag))
-            + (0.62 * (segment.UrbanRural == "urban" ? 1 : 0))
+            + (0.62 * (segment.UrbanRural == "u" ? 1 : 0))
             + (0.06 * segment.HCVRisk);
         return Logit(value);
     }
@@ -535,7 +541,7 @@ public class LTCracksModel : SCurveDistress
         //logit(-1.39 + -1.24 * para_surf_cs_flag + 0.82 * pcal_is_urban_flag + 0.09 * para_hcv_risk + 0.03 * para_scabb_pct)
         double value = -1.39
             + (-1.24 * (segment.SurfaceIsChipSealFlag))
-            + (0.82 * (segment.UrbanRural == "urban" ? 1 : 0))
+            + (0.82 * (segment.UrbanRural == "u" ? 1 : 0))
             + (0.09 * segment.HCVRisk)
             + (0.03 * segment.PctScabbing);
         return Logit(value);
@@ -584,7 +590,7 @@ public class MeshCrackModel : SCurveDistress
         //logit(-2.18 + -0.43 * para_surf_cs_flag + 0.28 * pcal_is_urban_flag + 0.12 * para_hcv_risk + 0.02 * para_lt_cracks_pct + 0.01 * para_scabb_pct)
         double value = -2.18 
             + (-0.43 * (segment.SurfaceClass == "cs" ? 1 : 0))
-            + (0.28 * (segment.UrbanRural == "urban" ? 1 : 0))
+            + (0.28 * (segment.UrbanRural == "u" ? 1 : 0))
             + (0.12 * segment.HCVRisk)
             + (0.02 * segment.PctLongTransCracks)
             + (0.01 * segment.PctScabbing);
@@ -634,7 +640,7 @@ public class ShovingModel : SCurveDistress
         //logit(-3.63 + 0.62 * para_surf_cs_flag + 0.31 * pcal_is_urban_flag + 0.08 * para_hcv_risk + 0.03 * para_mesh_cracks_pct + 0.01 * para_scabb_pct)
         double value = -3.63
             + (0.62 * (segment.SurfaceIsChipSealFlag))
-            + (0.31 * (segment.UrbanRural == "urban" ? 1 : 0))
+            + (0.31 * (segment.UrbanRural == "u" ? 1 : 0))
             + (0.08 * segment.HCVRisk)
             + (0.03 * segment.PctMeshCracks)
             + (0.01 * segment.PctScabbing);
@@ -684,7 +690,7 @@ public class PotholeModel : SCurveDistress
         //logit(-3 + 1.15 * para_surf_cs_flag + 0.36 * pcal_is_urban_flag + 0.03 * para_hcv_risk + 0.03 * para_shove_pct + 0.02 * para_mesh_cracks_pct + 0.02 * para_scabb_pct)
         double value = -3
             + (1.15 * (segment.SurfaceIsChipSealFlag))
-            + (0.36 * (segment.UrbanRural == "urban" ? 1 : 0))
+            + (0.36 * (segment.UrbanRural == "u" ? 1 : 0))
             + (0.03 * segment.HCVRisk)
             + (0.03 * segment.PctShoving)
             + (0.02 * segment.PctMeshCracks)
