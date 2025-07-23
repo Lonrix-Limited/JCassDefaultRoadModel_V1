@@ -191,7 +191,8 @@ public class Initialiser
         // Get the rut increase after settlement. Ensure the value is not negative
         double rutAfterSettlement = Math.Max(0, segment.RutParameterValue - settingInRutDepth);
 
-        double rutIncrementEstimate = rutAfterSettlement/segment.SurfaceAge;
+        double surfAgeSafe = segment.SurfaceAge + 0.1; // Ensure surface age is not zero to avoid division by zero errors
+        double rutIncrementEstimate = rutAfterSettlement/ surfAgeSafe;
 
         return Math.Clamp(rutIncrementEstimate, 0.05, 1.5);
 
@@ -257,7 +258,8 @@ public class Initialiser
         // Get the rut increase after settlement. Ensure the value is not negative
         double naasrafterSettlement = Math.Max(0, segment.Naasra85 - settingInValue);
 
-        double incrementEstimate = naasrafterSettlement / segment.SurfaceAge;
+        double surfAgeSafe = segment.SurfaceAge + 0.1; // Ensure surface age is not zero to avoid division by zero errors
+        double incrementEstimate = naasrafterSettlement / surfAgeSafe;
 
         return Math.Clamp(incrementEstimate, 0.2, 1.5);
 

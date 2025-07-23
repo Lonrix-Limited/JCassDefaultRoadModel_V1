@@ -65,12 +65,9 @@ public class RoadNetworkModel : DomainModelBase
 
         double initValMin = this.model.GetLookupValueNumber("distress", "iv_min");
         double initValMax = this.model.GetLookupValueNumber("distress", "iv_max");
+                
         double initValExpected = this.model.GetLookupValueNumber("distress", "iv_expected");
-
-        // Potholes have lower percentages than other distresses. It has a separate initialisaiton value
-        double initValExpectedPotholes = this.model.GetLookupValueNumber("distress", "iv_poth_expected");
         
-
         double t100Min = this.model.GetLookupValueNumber("distress", "t100_min");
         double t100Max = this.model.GetLookupValueNumber("distress", "t100_max");
 
@@ -92,8 +89,14 @@ public class RoadNetworkModel : DomainModelBase
         this.ShovingModel = new ShovingModel(this.model);
         ShovingModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
 
+        // Note: For potholes, the initial values are different from other distresses. This is because potholes normally comprise
+        // small percentage of total area.
+        double initValMinPoth = this.model.GetLookupValueNumber("distress", "iv_poth_min");
+        double initValMaxPoth = this.model.GetLookupValueNumber("distress", "iv_poth_max");
+        double initValExpectedPotholes = this.model.GetLookupValueNumber("distress", "iv_poth_expected");
+
         this.PotholeModel = new PotholeModel(this.model);
-        PotholeModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpectedPotholes);
+        PotholeModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMinPoth, initValMaxPoth, initValExpectedPotholes);
 
     }
 
@@ -109,7 +112,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 752)
+            if (iElemIndex == 92)
             {
                 int kk = 9;
             }
@@ -148,10 +151,15 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
+            if (iElemIndex == 92)
+            {
+                int kk = 9; // Debugging breakpoint
+            }
+
             Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
 
             RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);
-            segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
+            //segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
             
 
             // Apply Resets
@@ -185,11 +193,16 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
+            if (iElemIndex == 2133 && iPeriod == 2)
+            {
+                int kk = 9;
+            }
+
             Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
 
             RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);
-            segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
-            segment.UpdateCandidateSelectionResult(this.model, this, 0, infoFromModel);
+            //segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
+            //segment.UpdateCandidateSelectionResult(this.model, this, 0, infoFromModel);
 
             // Apply increments here
             RoadSegment incrementedSegment = _incrementer.Increment(segment, iPeriod);
@@ -239,7 +252,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 752 && iPeriod == 1)
+            if (iElemIndex == 92 && iPeriod == 4)
             {
                 int kk = 9;
             }

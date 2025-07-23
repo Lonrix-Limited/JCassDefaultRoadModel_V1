@@ -120,6 +120,9 @@ public static class CandidateSelector
         //Does this segment require a second coat now? If so, it is a valid candidate, so look no further.
         if (segment.SecondCoatNeeded) { return new CandidateSelectionResult(true, "Second-Coat Needed"); }
 
+        // If surface function is '1a' a follow-up surfacing after Preseal repairs is needed, so open the gate
+        if (segment.SurfaceFunction == "1a") { return new CandidateSelectionResult(true, "Second-Coat Needed over Preseal Repairs"); }
+
         // Is the specified earliest treatment period for the segment reached?
         int adjustedPeriod = currentPeriod + 1;  //Adjusted modelling period to account for a post calc lag in para csl flag
         if (adjustedPeriod < segment.EarliestTreatmentPeriod)

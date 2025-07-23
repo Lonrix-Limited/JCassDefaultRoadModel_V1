@@ -190,13 +190,31 @@ public abstract class SCurveDistress
 
         double aadiExpected = this.GetAadiExpectedValue(segment);
         double t100Expected = this.GetT100ExpectedValue(segment);
-
         double initialValueExpected = _InitValExpected; // make a copy - do not modify the base value!
+
+        //Check that the expected values (calculated based on probability or some other means) are within the
+        //limits. If they are outside of the limits, then clamp then a little higher or lower than the min or max, respectively
+        aadiExpected = this.GetVirtualClampValue(aadiExpected, _AADIMin, _AADIMax);
+        t100Expected = this.GetVirtualClampValue(t100Expected, _T100Min, _T100Max);
+        initialValueExpected = this.GetVirtualClampValue(initialValueExpected, _InitValMin, _InitValMax);
 
         SShapedModelHelper.CalibrateFactors(segment.SurfaceAge, observedValue, _T100Min, _T100Max, _AADIMin, _AADIMax, _InitValMin, _InitValMax,
             ref t100Expected, ref aadiExpected, ref initialValueExpected, errorTolerance);
 
         return $"{Math.Round(aadiExpected,2)}_{Math.Round(initialValueExpected,2)}_{Math.Round(t100Expected,2)}";
+    }
+
+    private double GetVirtualClampValue(double value, double min, double max)
+    {
+        if (value <= min)
+        {
+            return min * 1.05;    //Return value 5% above minimum
+        }
+        else if (value >= max)
+        {
+            return max * 0.95;  //Return value 5% below maximum
+        }
+        return value;
     }
 
     /// <summary>

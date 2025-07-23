@@ -277,7 +277,9 @@ public class RoadSegment
             {
                 throw new Exception($"Surface expected life is zero or negative for segment {this.FeebackCode}. Surface Age: {this.SurfaceAge}, Expected Life: {this.SurfaceExpectedLife}.");
             }
-            return 100 * (this.SurfaceAge / this.SurfaceExpectedLife);
+            // As per JFunctions, limit the value to 200 to prevent very high values from distorting MCDA
+            // TODO: Re-think this
+            return Math.Min(200, 100 * (this.SurfaceAge / this.SurfaceExpectedLife));
         }
     }
 

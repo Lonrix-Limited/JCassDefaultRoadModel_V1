@@ -21,8 +21,12 @@ public class Incrementer
     }
 
     public RoadSegment Increment(RoadSegment segment, int period)
-    {        
-     
+    {
+        if (segment.ElementIndex == 1272)
+        {
+            int debug = 0; // Debugging breakpoint
+        }
+
         // Increment all properties related to model parameters
         // Keep the code same order as the model parameter list
 

@@ -27,6 +27,11 @@ public class Resetter
 
     public RoadSegment Reset(RoadSegment segment, int period, TreatmentInstance treatment)
     {
+        if (segment.ElementIndex == 92)
+        {
+            int debug = 0; // Debugging breakpoint
+        }
+
         if (treatment is null) return segment;
 
         string treatmentCategory = _frameworkModel.TreatmentTypes[treatment.TreatmentName].Category;
@@ -80,26 +85,33 @@ public class Resetter
         // Note: surface life achieved and surface remaining life are automatically calculated based on the surface age and expected life
 
         // Reset visual distresses
+        double flushingPrevious = segment.PctFlushing;
         segment.PctFlushing = _domainModel.FlushingModel.GetValueAfterReset(segment, segment.PctFlushing,treatmentCategory);
-        segment.FlushingModelInfo = _domainModel.FlushingModel.GetResettedSetupValues(segment, segment.PctFlushing, treatmentCategory);
+        segment.FlushingModelInfo = _domainModel.FlushingModel.GetResettedSetupValues(segment, flushingPrevious, treatmentCategory);
 
+        double edgeBreaksPrevious = segment.PctEdgeBreaks;
         segment.PctEdgeBreaks = _domainModel.EdgeBreakModel.GetValueAfterReset(segment, segment.PctEdgeBreaks, treatmentCategory);
-        segment.EdgeBreakModelInfo = _domainModel.EdgeBreakModel.GetResettedSetupValues(segment, segment.PctEdgeBreaks, treatmentCategory);
+        segment.EdgeBreakModelInfo = _domainModel.EdgeBreakModel.GetResettedSetupValues(segment, edgeBreaksPrevious, treatmentCategory);
 
+        double scabbingPrevious = segment.PctScabbing;
         segment.PctScabbing = _domainModel.ScabbingModel.GetValueAfterReset(segment, segment.PctScabbing, treatmentCategory);
-        segment.ScabbingModelInfo = _domainModel.ScabbingModel.GetResettedSetupValues(segment, segment.PctScabbing, treatmentCategory);
+        segment.ScabbingModelInfo = _domainModel.ScabbingModel.GetResettedSetupValues(segment, scabbingPrevious, treatmentCategory);
 
+        double ltCrackingPrevious = segment.PctLongTransCracks;
         segment.PctLongTransCracks = _domainModel.LTCracksModel.GetValueAfterReset(segment, segment.PctLongTransCracks, treatmentCategory);
-        segment.LTCracksModelInfo = _domainModel.LTCracksModel.GetResettedSetupValues(segment, segment.PctLongTransCracks, treatmentCategory);
+        segment.LTCracksModelInfo = _domainModel.LTCracksModel.GetResettedSetupValues(segment, ltCrackingPrevious, treatmentCategory);
 
+        double meshCracksPrevious = segment.PctMeshCracks;
         segment.PctMeshCracks = _domainModel.MeshCrackModel.GetValueAfterReset(segment, segment.PctMeshCracks, treatmentCategory);
-        segment.MeshCrackModelInfo = _domainModel.MeshCrackModel.GetResettedSetupValues(segment, segment.PctMeshCracks, treatmentCategory);
+        segment.MeshCrackModelInfo = _domainModel.MeshCrackModel.GetResettedSetupValues(segment, meshCracksPrevious, treatmentCategory);
 
+        double shovingPrevious = segment.PctShoving;
         segment.PctShoving = _domainModel.ShovingModel.GetValueAfterReset(segment, segment.PctShoving, treatmentCategory);
-        segment.ShovingModelInfo = _domainModel.ShovingModel.GetResettedSetupValues(segment, segment.PctShoving, treatmentCategory);
+        segment.ShovingModelInfo = _domainModel.ShovingModel.GetResettedSetupValues(segment, shovingPrevious, treatmentCategory);
 
+        double potholesPrevious = segment.PctPotholes;
         segment.PctPotholes = _domainModel.PotholeModel.GetValueAfterReset(segment, segment.PctPotholes, treatmentCategory);
-        segment.PotholeModelInfo = _domainModel.PotholeModel.GetResettedSetupValues(segment, segment.PctPotholes, treatmentCategory);
+        segment.PotholeModelInfo = _domainModel.PotholeModel.GetResettedSetupValues(segment, potholesPrevious, treatmentCategory);
 
         segment.RutParameterValue = this.GetResetttedRut(segment, isRehab);
         segment.RutIncrement = segment.GetRutIncrementAfterTreatment();

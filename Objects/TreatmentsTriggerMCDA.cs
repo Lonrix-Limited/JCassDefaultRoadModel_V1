@@ -84,7 +84,7 @@ public class TreatmentsTriggerMCDA
 
         // Do not add a treatment if the current surface is not ChipSeal
         // ToDo: needs discussion. May be cases where current surfacing is AC
-        if (segment.SurfaceIsChipSealFlag == 0) return false;
+        //if (segment.SurfaceIsChipSealFlag == 0) return false;
 
         if (segment.SecondCoatNeeded) return false; // Do not add a preservation treatment if a second coat is needed
 
@@ -110,7 +110,7 @@ public class TreatmentsTriggerMCDA
 
         // Do not add a treatment if the current surface is a ChipSeal
         // ToDo: needs discussion. May be cases where current surfacing is AC
-        if (segment.SurfaceIsChipSealFlag == 1) return false;
+        //if (segment.SurfaceIsChipSealFlag == 1) return false;
 
         if (segment.SecondCoatNeeded) return false; // Do not add a preservation treatment if a second coat is needed
 
