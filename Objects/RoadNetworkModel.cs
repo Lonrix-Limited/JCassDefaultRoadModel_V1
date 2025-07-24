@@ -112,7 +112,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 7)
+            if (iElemIndex == 1998)
             {
                 int kk = 9;
             }
@@ -151,7 +151,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 92)
+            if (iElemIndex == 206)
             {
                 int kk = 9; // Debugging breakpoint
             }

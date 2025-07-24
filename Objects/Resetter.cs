@@ -78,7 +78,7 @@ public class Resetter
             segment.SurfaceNumberOfLayers = segment.SurfaceIsChipSealFlag == 1 ? segment.SurfaceNumberOfLayers + 1 : segment.SurfaceNumberOfLayers;
         }
 
-        segment.SurfaceFunction = this.GetSurfaceFunction(treatment.TreatmentName, isPreseal, isRehab, segment.SurfaceFunction);
+        segment.SurfaceFunction = this.GetSurfaceFunction(treatment.TreatmentName, isPreseal, segment.SurfaceFunction);
         
         segment.SurfaceExpectedLife = this.GetExpectedSurfaceLife(segment);
         segment.SurfaceAge = isPreseal ? segment.SurfaceAge + 1 : 0;  //All treatments reset surface age to zero except if Preseal
@@ -129,12 +129,13 @@ public class Resetter
 
     }
 
-    private string GetSurfaceFunction(string treatmentName, bool isPreseal, bool isRehab, string currentSurfaceFunction)
+    private string GetSurfaceFunction(string treatmentName, bool isPreseal, string currentSurfaceFunction)
     {
         if (isPreseal) return "1a";
-        if (isRehab) return "1";
-
+        
         if (treatmentName.ToLower().StartsWith("rehab_ac")) return "2";
+
+        if (treatmentName.ToLower().StartsWith("rehab_cs")) return "1";
 
         if (currentSurfaceFunction == "1a") return "H";
 
