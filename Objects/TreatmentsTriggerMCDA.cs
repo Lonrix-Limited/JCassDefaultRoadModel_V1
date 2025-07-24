@@ -189,9 +189,7 @@ public class TreatmentsTriggerMCDA
         presealAreaFraction = 0.0; // Default value
 
         if (CanDoAsphaltPreservationOrPreseal(segment, iPeriod, true) == false) return false;
-
-        if (segment.RutParameterValue > _domainModel.Constants.TSSHoldingMaxRut) return false; // If the rut depth is above the maximum threshold, do not add a treatment
-
+        
         if (segment.SurfaceFunction == "1a") return false; // Do not add a preseal treatment if the surface function is "1a"
 
         JFuncLookupNumber presealAreaFractionLookup = new JFuncLookupNumber("preseal_effective: para_pdi", _frameworkModel.Lookups);
@@ -320,9 +318,6 @@ public class TreatmentsTriggerMCDA
     {
         if (this.CanDoPresealOnChipSeal(segment, iPeriod, out double presealAreaFraction) == false) return;
         
-        // If the rut depth is above the maximum threshold, do not add a treatment
-        if (segment.RutParameterValue > _domainModel.Constants.TSSHoldingMaxRut) return;
-
         // If the surface life achieved is not greater than the minimum required, do not add a treatment
         //if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;               
 

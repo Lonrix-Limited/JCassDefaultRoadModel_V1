@@ -116,7 +116,7 @@ public static class RoadSegmentFactory
     /// <param name="inputAndParameterValues">Dictionary provided by model containing all raw input values and parameter values with
     /// keys mapping to either raw input columns or to parameter names/codes and the Values mapping to the corresponding values./param>
     /// <returns></returns>
-    public static RoadSegment GetFromModel(ModelBase frameworkModel, Dictionary<string, object> inputAndParameterValues, int elementIndex)
+    public static RoadSegment GetFromModel(ModelBase frameworkModel, Dictionary<string, object> inputAndParameterValues, int elementIndex, int iPeriod)
     {
         RoadSegment segment = new RoadSegment();
 
@@ -142,6 +142,10 @@ public static class RoadSegmentFactory
         segment.IsRoundaboutFlag = Convert.ToBoolean(inputAndParameterValues["file_is_roundabout_flag"]);
         segment.CanTreatFlag = Convert.ToBoolean(inputAndParameterValues["file_can_treat_flag"]);
         segment.CanRehabFlag = Convert.ToBoolean(inputAndParameterValues["file_can_rehab_flag"]);
+
+        // TODO: To discuss and make hardcoded value of 7 a lookup parameter
+        if (iPeriod > 7) segment.CanRehabFlag = true; // For congruence with JFunction model, we allow rehab after 7 periods
+
         segment.AsphaltOkFlag = Convert.ToBoolean(inputAndParameterValues["file_ac_ok_flag"]);
 
         // Classification

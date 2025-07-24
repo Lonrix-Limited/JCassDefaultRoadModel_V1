@@ -41,7 +41,10 @@ public static class TreatmentSuitabilityScorer
     }
 
     public static double GetTSSForPresealRepairs(RoadSegment segment, RoadNetworkModel domainModel, int iPeriod)
-    {
+    {        
+        // If Rut is above the allowed value for Preseal Repairs, then TSS is zero
+        if (segment.RutParameterValue > domainModel.Constants.TSSHoldingMaxRut) return 0.0;
+
         // If we get here, a preservation treatment is valid. Calculate the relative suitability score based on the Surface Distress Index (SDI)
         string tssModelSetup = $"{domainModel.Constants.TSSHoldingPdiRankPt1},0|{domainModel.Constants.TSSHoldingPdiRankPt2},100 | 100,{domainModel.Constants.TSSHoldingPdiRankPt3}";
         PieceWiseLinearModelGeneric tssModel = new PieceWiseLinearModelGeneric(tssModelSetup, true);        

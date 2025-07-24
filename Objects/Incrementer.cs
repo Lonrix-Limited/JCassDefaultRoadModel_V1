@@ -50,6 +50,23 @@ public class Incrementer
 
         // Note: surface life achieved and surface remaining life are automatically calculated based on the surface age and expected life
 
+        // TODO: Rutting and Roughness increments are dependent on Distresses and should therefore be determine only distresses have been
+        // incremented. But the JFunction model does it the other way round. Modify this once models converge.
+
+        // Only update Rutting increment if a treatment has been applied, otherwise we continue using (for now) the historical rate
+        if (segment.TreatmentCount > 0)
+        {
+            segment.RutIncrement = segment.GetRutIncrementAfterTreatment();
+        }
+        segment.RutParameterValue += segment.RutIncrement;
+
+        // Only update the Naasra increment if a treatment has been applied, otherwise we continue using the historical rate
+        if (segment.TreatmentCount > 0)
+        {
+            segment.NaasraIncrement = segment.GetNaasraIncrementAfterTreatment();
+        }
+        segment.Naasra85 += segment.NaasraIncrement;
+
         // Increment visual distresses
         segment.PctFlushing = _domainModel.FlushingModel.GetNextValueAfterIncrement(segment, segment.PctFlushing, segment.FlushingModelInfo);
         // segment.FlushingModelInfo stays unchanged during increment
@@ -71,21 +88,7 @@ public class Incrementer
 
         segment.PctPotholes = _domainModel.PotholeModel.GetNextValueAfterIncrement(segment, segment.PctPotholes, segment.PotholeModelInfo);
         //segment.PotholeModelInfo stays unchanged during increment
-
-        // Only update Rutting increment if a treatment has been applied, otherwise we continue using (for now) the historical rate
-        if (segment.TreatmentCount > 0)
-        {
-            segment.RutIncrement = segment.GetRutIncrementAfterTreatment();
-        }
-        segment.RutParameterValue += segment.RutIncrement;
-
-        // Only update the Naasra increment if a treatment has been applied, otherwise we continue using the historical rate
-        if (segment.TreatmentCount > 0)
-        {
-            segment.NaasraIncrement = segment.GetNaasraIncrementAfterTreatment();
-        }
-        segment.Naasra85 += segment.NaasraIncrement;
-
+        
         // Calculated parameters such as PDI, SDI and Objective Function Parameters should be calculated on return
 
         // Is treated flag and treatment count stays unchanged during regular increment

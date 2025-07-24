@@ -112,7 +112,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 92)
+            if (iElemIndex == 7)
             {
                 int kk = 9;
             }
@@ -158,7 +158,7 @@ public class RoadNetworkModel : DomainModelBase
 
             Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex, iPeriod);
             //segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
             
 
@@ -200,7 +200,7 @@ public class RoadNetworkModel : DomainModelBase
 
             Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex, iPeriod);
             //segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
             //segment.UpdateCandidateSelectionResult(this.model, this, 0, infoFromModel);
 
@@ -252,17 +252,15 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 92 && iPeriod == 4)
+            if (iElemIndex == 1501 && iPeriod == 8)
             {
                 int kk = 9;
             }
 
             Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);            
-            //segment.UpdateCandidateSelectionResult(this.model, this, iPeriod, infoFromModel);
-            //segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);  //Immediately update the formula values for the segment
-
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex, iPeriod);            
+            
             TreatmentsTriggerMCDA mcdaTriggerFunction = new TreatmentsTriggerMCDA(this.model, this);
             List<TreatmentInstance> candidates = mcdaTriggerFunction.GetTriggeredTreatments(segment, iPeriod, infoFromModel);
 
@@ -291,7 +289,7 @@ public class RoadNetworkModel : DomainModelBase
         {
             Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawData, paramValues, iPeriod);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex);
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex, iPeriod);
             segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);  //Immediately update the formula values for the segment
 
             return RoutineMaintenance.GetRoutineMaintenance(segment, iPeriod);

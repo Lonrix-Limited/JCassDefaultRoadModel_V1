@@ -45,7 +45,14 @@ public static class CandidateSelector
             bool isShortTerm = currentPeriod <= domainModel.Constants.CSShortTermPeriod;
 
             if (isShortTerm)
-            {                
+            {
+                // Currently, check on ADT is only applied in short term, so that over the long term, even very short segments can be considered for treatment
+                // otherwise they lag behing and mess up network condition statistics
+                if (segment.AverageDailyTraffic < domainModel.Constants.CSMinAdtThreshold)
+                {
+                    return new CandidateSelectionResult(false, $"ADT = {Math.Round(segment.AverageDailyTraffic, 1)}: below threshold ({domainModel.Constants.CSMinAdtThreshold})");
+                }
+
                 if (isShortSegment)
                 {                    
                     if (HasSufficientDistressForShortSegment(segment, frameworkModel, domainModel, currentPeriod) == false)
@@ -133,25 +140,20 @@ public static class CandidateSelector
         // Is the specified minimum surface age reached?
         if (segment.SurfaceAge < domainModel.Constants.CSMinSurfAge)
         {
-            return new CandidateSelectionResult(false, $"Surface Age = {segment.SurfaceAge}: below threshold ({domainModel.Constants.CSMinSurfAge})");
+            return new CandidateSelectionResult(false, $"Surface Age = {Math.Round(segment.SurfaceAge,2)}: below threshold ({domainModel.Constants.CSMinSurfAge})");
         }
 
         // Is the specified minimum Surface Life Achieved (SLA) reached?
         if (segment.SurfaceClass == "ac" && segment.SurfaceAchievedLifePercent < domainModel.Constants.CSMinSlaToTreatAc)
         {
-            return new CandidateSelectionResult(false, $"SLA = {segment.SurfaceAchievedLifePercent}: below threshold ({domainModel.Constants.CSMinSlaToTreatAc})");
+            return new CandidateSelectionResult(false, $"SLA = {Math.Round(segment.SurfaceAchievedLifePercent, 2)}: below threshold ({domainModel.Constants.CSMinSlaToTreatAc})");
         }
 
         if (segment.SurfaceClass == "cs" && segment.SurfaceAchievedLifePercent < domainModel.Constants.CSMinSlaToTreatCs)
         {
-            return new CandidateSelectionResult(false, $"SLA = {segment.SurfaceAchievedLifePercent}: below threshold ({domainModel.Constants.CSMinSlaToTreatCs})");
+            return new CandidateSelectionResult(false, $"SLA = {Math.Round(segment.SurfaceAchievedLifePercent,2)}: below threshold ({domainModel.Constants.CSMinSlaToTreatCs})");
         }
-
-        if (segment.AverageDailyTraffic < domainModel.Constants.CSMinAdtThreshold)
-        {
-            return new CandidateSelectionResult(false, $"ADT = {segment.AverageDailyTraffic}: below threshold ({domainModel.Constants.CSMinAdtThreshold})");
-        }
-
+        
         return null; // No preliminary issues found, so we can proceed with further checks
 
     }
