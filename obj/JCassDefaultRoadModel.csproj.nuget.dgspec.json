@@ -493,6 +493,10 @@
             "Microsoft.ML.LightGbm": {
               "target": "Package",
               "version": "[3.0.1, )"
+            },
+            "System.Collections.Immutable": {
+              "target": "Package",
+              "version": "[9.0.8, )"
             }
           },
           "imports": [

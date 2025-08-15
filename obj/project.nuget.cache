@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "tCPTgL3Sjl8=",
+  "dgSpecHash": "pOEVEcOMBVw=",
   "success": true,
   "projectFilePath": "C:\\aa_git_repos\\JCassDefaultRoadModel\\JCassDefaultRoadModel.csproj",
   "expectedPackageFiles": [
@@ -36,7 +36,7 @@
     "C:\\Users\\fritz\\.nuget\\packages\\spreadsheetlight\\3.5.0\\spreadsheetlight.3.5.0.nupkg.sha512",
     "C:\\Users\\fritz\\.nuget\\packages\\stub.system.data.sqlite.core.netstandard\\1.0.117\\stub.system.data.sqlite.core.netstandard.1.0.117.nupkg.sha512",
     "C:\\Users\\fritz\\.nuget\\packages\\system.codedom\\8.0.0\\system.codedom.8.0.0.nupkg.sha512",
-    "C:\\Users\\fritz\\.nuget\\packages\\system.collections.immutable\\1.5.0\\system.collections.immutable.1.5.0.nupkg.sha512",
+    "C:\\Users\\fritz\\.nuget\\packages\\system.collections.immutable\\9.0.8\\system.collections.immutable.9.0.8.nupkg.sha512",
     "C:\\Users\\fritz\\.nuget\\packages\\system.configuration.configurationmanager\\6.0.0\\system.configuration.configurationmanager.6.0.0.nupkg.sha512",
     "C:\\Users\\fritz\\.nuget\\packages\\system.console\\4.3.0\\system.console.4.3.0.nupkg.sha512",
     "C:\\Users\\fritz\\.nuget\\packages\\system.data.sqlite.core\\1.0.117\\system.data.sqlite.core.1.0.117.nupkg.sha512",
