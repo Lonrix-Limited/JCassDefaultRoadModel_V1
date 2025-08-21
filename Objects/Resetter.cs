@@ -35,8 +35,9 @@ public class Resetter
         if (treatment is null) return segment;
 
         string treatmentCategory = _frameworkModel.TreatmentTypes[treatment.TreatmentName].Category;
-        bool isRehab = treatment.TreatmentName.ToLower().StartsWith("rehab");
-        bool isPreseal = treatment.TreatmentName.ToLower().StartsWith("preseal");
+        string treatmentName = treatment.TreatmentName.ToLower();
+        bool isRehab = treatmentName.StartsWith("rehab");
+        bool isPreseal = treatmentName.StartsWith("preseal") || treatmentName == "ac_hmaint";
 
         // Reset (or increment where not applicable) all properties related to model parameters
         // Keep the code same order as the model parameter list
@@ -60,9 +61,7 @@ public class Resetter
         segment.SurfaceMaterial = _frameworkModel.GetLookupValueText("treat_surf_materials", treatment.TreatmentName);
         segment.SurfaceClass = _frameworkModel.GetLookupValueText("treat_surf_class", treatment.TreatmentName);        
         
-        // If rehab, number of surfacing becomes 1. Otherwise, increase number of surfacings but only if it is a chipseal. If AC, then it remains the same.
-        
-        
+        // If rehab, number of surfacing becomes 1. Otherwise, increase number of surfacings but only if it is a chipseal. If AC, then it remains the same.                
         if (isRehab)
         {
             //Surface Thickness to reset to, based on lookup of surface material type applied if treatment is pavement renewal (Rehab)
@@ -87,31 +86,31 @@ public class Resetter
         // Reset visual distresses
         double flushingPrevious = segment.PctFlushing;
         segment.PctFlushing = _domainModel.FlushingModel.GetValueAfterReset(segment, segment.PctFlushing,treatmentCategory);
-        segment.FlushingModelInfo = _domainModel.FlushingModel.GetResettedSetupValues(segment, flushingPrevious, treatmentCategory);
+        segment.FlushingModelInfo = _domainModel.FlushingModel.GetResettedSetupValues(segment, flushingPrevious, treatmentCategory, segment.FlushingModelInfo);
 
         double edgeBreaksPrevious = segment.PctEdgeBreaks;
         segment.PctEdgeBreaks = _domainModel.EdgeBreakModel.GetValueAfterReset(segment, segment.PctEdgeBreaks, treatmentCategory);
-        segment.EdgeBreakModelInfo = _domainModel.EdgeBreakModel.GetResettedSetupValues(segment, edgeBreaksPrevious, treatmentCategory);
+        segment.EdgeBreakModelInfo = _domainModel.EdgeBreakModel.GetResettedSetupValues(segment, edgeBreaksPrevious, treatmentCategory, segment.EdgeBreakModelInfo);
 
         double scabbingPrevious = segment.PctScabbing;
         segment.PctScabbing = _domainModel.ScabbingModel.GetValueAfterReset(segment, segment.PctScabbing, treatmentCategory);
-        segment.ScabbingModelInfo = _domainModel.ScabbingModel.GetResettedSetupValues(segment, scabbingPrevious, treatmentCategory);
+        segment.ScabbingModelInfo = _domainModel.ScabbingModel.GetResettedSetupValues(segment, scabbingPrevious, treatmentCategory, segment.ScabbingModelInfo);
 
         double ltCrackingPrevious = segment.PctLongTransCracks;
         segment.PctLongTransCracks = _domainModel.LTCracksModel.GetValueAfterReset(segment, segment.PctLongTransCracks, treatmentCategory);
-        segment.LTCracksModelInfo = _domainModel.LTCracksModel.GetResettedSetupValues(segment, ltCrackingPrevious, treatmentCategory);
+        segment.LTCracksModelInfo = _domainModel.LTCracksModel.GetResettedSetupValues(segment, ltCrackingPrevious, treatmentCategory, segment.LTCracksModelInfo);
 
         double meshCracksPrevious = segment.PctMeshCracks;
         segment.PctMeshCracks = _domainModel.MeshCrackModel.GetValueAfterReset(segment, segment.PctMeshCracks, treatmentCategory);
-        segment.MeshCrackModelInfo = _domainModel.MeshCrackModel.GetResettedSetupValues(segment, meshCracksPrevious, treatmentCategory);
+        segment.MeshCrackModelInfo = _domainModel.MeshCrackModel.GetResettedSetupValues(segment, meshCracksPrevious, treatmentCategory, segment.MeshCrackModelInfo);
 
         double shovingPrevious = segment.PctShoving;
         segment.PctShoving = _domainModel.ShovingModel.GetValueAfterReset(segment, segment.PctShoving, treatmentCategory);
-        segment.ShovingModelInfo = _domainModel.ShovingModel.GetResettedSetupValues(segment, shovingPrevious, treatmentCategory);
+        segment.ShovingModelInfo = _domainModel.ShovingModel.GetResettedSetupValues(segment, shovingPrevious, treatmentCategory, segment.ShovingModelInfo);
 
         double potholesPrevious = segment.PctPotholes;
         segment.PctPotholes = _domainModel.PotholeModel.GetValueAfterReset(segment, segment.PctPotholes, treatmentCategory);
-        segment.PotholeModelInfo = _domainModel.PotholeModel.GetResettedSetupValues(segment, potholesPrevious, treatmentCategory);
+        segment.PotholeModelInfo = _domainModel.PotholeModel.GetResettedSetupValues(segment, potholesPrevious, treatmentCategory, segment.PotholeModelInfo);
 
         segment.RutParameterValue = this.GetResetttedRut(segment, isRehab);
         segment.RutIncrement = segment.GetRutIncrementAfterTreatment();
@@ -153,9 +152,13 @@ public class Resetter
     {
         if (segment.SurfaceClass == "blocks") return segment.SurfaceExpectedLife; // Blocks have a fixed expected life, no lookup needed
         if (segment.SurfaceClass == "concrete") return segment.SurfaceExpectedLife; // Concrete has a fixed expected life, no lookup needed
-        if (segment.SurfaceClass == "other") return segment.SurfaceExpectedLife; 
+        if (segment.SurfaceClass == "other") return segment.SurfaceExpectedLife;
 
-        string lookupKey = $"{segment.SurfaceFunction}_{segment.SurfaceMaterial}_{segment.RoadClass}";
+        // Since preseal is a temporary treatment, it does not have an actual expected life
+        // So based the expected life on the Reseal 'R' surface function - this is needed for the S-curve reset 
+        string surfFuncToUse = segment.SurfaceFunction == "1a" ? "R" : segment.SurfaceFunction;
+
+        string lookupKey = $"{surfFuncToUse}_{segment.SurfaceMaterial}_{segment.RoadClass}".ToLower();
         bool keyExists = _frameworkModel.Lookups["surf_life_exp"].ContainsKey(lookupKey);
         if (keyExists)
         {
@@ -163,17 +166,8 @@ public class Resetter
         }
         else
         {
-            _frameworkModel.LogMessage($"Expected surface life lookup key '{lookupKey}' not found. Using default value for {segment.SurfaceClass}.", true);
-            if (segment.SurfaceClass == "cs") // Chipseal
-            {
-                return _frameworkModel.GetLookupValueNumber("surf_life_exp", "cs_undefined");
-            }
-            else if (segment.SurfaceClass == "ac") // Asphalt Concrete
-            {
-                return _frameworkModel.GetLookupValueNumber("surf_life_exp", "ac_undefined");
-            }            
-        }
-        throw new KeyNotFoundException($"Expected surface life not found for {segment.FeebackCode}. Surface class = '{segment.SurfaceClass}'.");
+            throw new KeyNotFoundException($"Expected surface life not found for {segment.FeebackCode}. Surface function = '{segment.SurfaceFunction}', Material = '{segment.SurfaceMaterial}', Road class = '{segment.RoadClass}'.");
+        }        
     }
     
     private double GetResetttedRut(RoadSegment segment, bool isRehab)

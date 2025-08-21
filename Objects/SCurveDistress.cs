@@ -15,10 +15,31 @@ namespace JCassDefaultRoadModel.Objects;
 /// </summary>
 public abstract class SCurveDistress
 {
+    /// <summary>
+    /// Piecewise linear model for reset curve for Chip Seal historic data. That is, for resetting the last observed
+    /// distress if the distress survey is outdated. This curve is used to determine the initial value for the distress after a resurfacing or holding action.
+    /// </summary>
+    protected PieceWiseLinearModelGeneric _resetCurveForCS_HistoricData;
 
-    protected PieceWiseLinearModelGeneric _resetCurveForCS;
+    /// <summary>
+    /// Piecewise linear model for reset curve for ĀC historic data. That is, for resetting the last observed
+    /// distress if the distress survey is outdated. This curve is used to determine the initial value for the distress after a resurfacing or holding action.
+    /// </summary>
+    protected PieceWiseLinearModelGeneric _resetCurveForAC_HistoricData;
 
-    protected PieceWiseLinearModelGeneric _resetCurveForAC;
+
+    /// <summary>
+    /// Piecewise linear model that determines the penalty factor to apply to the expected AADI and T100 values when a RESURFACING is placed
+    /// over existing distress. The X-values are the distress values before the resurfacing, and the Y-values are the penalty factor to apply.
+    /// </summary>
+    protected PieceWiseLinearModelGeneric _resetPenaltyCurveForResurfacing;
+
+    /// <summary>
+    /// Piecewise linear model that determines the penalty factor to apply to the expected AADI and T100 values when a HOLDING ACTION is placed
+    /// over existing distress. The X-values are the distress values before the resurfacing, and the Y-values are the penalty factor to apply.
+    /// </summary>
+    protected PieceWiseLinearModelGeneric _resetPenaltyCurveForHoldingAction;
+
 
     protected ModelBase _frameworkModel;
 
@@ -88,7 +109,44 @@ public abstract class SCurveDistress
         _frameworkModel = model;
     }
 
-    public abstract void Setup(double aadiMin, double aadiMax, double t100Min, double t100Max, double ivMin, double ivMax, double initialValueExpected = 0.5);
+    public void Setup(string distressLookupSetCode)
+    {
+        try
+        {
+            if (!_frameworkModel.Lookups.ContainsKey(distressLookupSetCode))
+            {
+                throw new ArgumentException($"Distress lookup set code '{distressLookupSetCode}' for S-Curve setup is not found in framework model lookups.");
+            }
+
+            _AADIMin = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["aadi_min"]);
+            _AADIMax = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["aadi_max"]);
+            _T100Min = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["t100_min"]);
+            _T100Max = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["t100_max"]);
+            _InitValMin = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["iv_min"]);
+            _InitValMax = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["iv_max"]);
+            _InitValExpected = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["iv_expected"]);
+
+            // Initialize the reset curves for Mesh Cracks
+            string resetCurveCS = _frameworkModel.Lookups[distressLookupSetCode]["historic_reset_cs"].ToString();
+            string resetCurveAC = _frameworkModel.Lookups[distressLookupSetCode]["historic_reset_ac"].ToString();
+            _resetCurveForCS_HistoricData = new PieceWiseLinearModelGeneric(resetCurveCS, false);
+            _resetCurveForAC_HistoricData = new PieceWiseLinearModelGeneric(resetCurveAC, false);
+
+            double fact1or1 = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["reset_resurf_thresh1"]);
+            double fact1or2 = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["reset_resurf_thresh2"]);
+            string setupCode = $"{fact1or1},1|{fact1or2},0";
+            _resetPenaltyCurveForResurfacing = new PieceWiseLinearModelGeneric(setupCode, false);
+
+            fact1or1 = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["reset_holding_thresh1"]);
+            fact1or2 = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["reset_holding_thresh2"]);
+            setupCode = $"{fact1or1},1|{fact1or2},0";
+            _resetPenaltyCurveForHoldingAction = new PieceWiseLinearModelGeneric(setupCode, false);
+        }
+        catch (Exception ex)
+        {
+            throw new Exception($"Error setting up S-curve distress model for 'distressLookupSetCode'. Details: {Environment.NewLine}{ex.Message}");            
+        }        
+    }
 
     /// <summary>
     /// Gets the initial value for a distress type based on the segment's condition survey date and current value. If the 
@@ -122,11 +180,11 @@ public abstract class SCurveDistress
             // reset value for the distress type
             if (segment.SurfaceClass == "cs")
             {
-                return _resetCurveForCS.GetValue(currentValue);
+                return _resetCurveForCS_HistoricData.GetValue(currentValue);
             }
             else if (segment.SurfaceClass == "ac")
             {
-                return _resetCurveForAC.GetValue(currentValue);
+                return _resetCurveForAC_HistoricData.GetValue(currentValue);
             }
             else
             {
@@ -158,9 +216,9 @@ public abstract class SCurveDistress
     /// Gets the Age At Distress Initiation (AADi) expected value for a given road segment. This is calculated as the expected life of the surface
     /// multiplied by 1 minus the probability of distress for the segment. Thus the larger the probability of distress, the smaller the expected AADi value.
     /// </summary>        
-    protected double GetAadiExpectedValue(RoadSegment segment)
+    protected double GetAadiExpectedValue(double expectedSurfaceLife, double distressProb)
     {
-        double value = segment.SurfaceExpectedLife * (1.0 - this.DistressProbability(segment));
+        double value = expectedSurfaceLife * (1.0 - distressProb);
         // Ensure the value is within the defined AADI limits
         return Math.Clamp(value, _AADIMin, _AADIMax);
     }
@@ -170,9 +228,9 @@ public abstract class SCurveDistress
     /// multiplied by 1 minus the probability of distress for the segment. Thus the larger the probability of distress, the smaller the expected T100 value.
     /// </summary>    
     /// <remarks>For details see: https://lonrix-limited.github.io/jcass_docs2/jfuncs/jfunc_s_calibrator.html</remarks>
-    protected double GetT100ExpectedValue(RoadSegment segment)
+    protected double GetT100ExpectedValue(double distressProbability)
     {
-        return _T100Max * (1.0 - this.DistressProbability(segment));
+        return _T100Max * (1.0 - distressProbability);
     }
 
     /// <summary>
@@ -183,13 +241,16 @@ public abstract class SCurveDistress
     public string GetCalibratedInitialSetupValues(RoadSegment segment, double observedValue, double errorTolerance)
     {
         //Debug for specific element. Change element index as needed
-        if (segment.ElementIndex == 123)
+        if (segment.ElementIndex == 3)
         {
             int kk = 9;   //put breakpoint on this line
         }
 
-        double aadiExpected = this.GetAadiExpectedValue(segment);
-        double t100Expected = this.GetT100ExpectedValue(segment);
+        double surfaceExpectedLife = segment.SurfaceExpectedLife;
+        double distressProb = this.DistressProbability(segment);
+
+        double aadiExpected = this.GetAadiExpectedValue(surfaceExpectedLife, distressProb);
+        double t100Expected = this.GetT100ExpectedValue(distressProb);
         double initialValueExpected = _InitValExpected; // make a copy - do not modify the base value!
 
         //Check that the expected values (calculated based on probability or some other means) are within the
@@ -224,37 +285,22 @@ public abstract class SCurveDistress
     /// <param name="treatmentCategory">Treatment Category. We expect Rehabilitation treatments to start with 'rehab' and holding treatments
     /// category to start with 'holding' (not case sensitive). All other treatments are presume to be Resurfacings.</param>
     /// <returns>Values in concatenated string with [AADI_InitialValue_T100]</returns>
-    public virtual string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory)
+    public virtual string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory, string previousSetupCode)
     {
+        // If the treatment is a second coat over a holding action, we assume the distress has been reset and the S-curve parameters
+        // reset at the time of the holing action still apply. Thus we return the previous setup code. Note we have to use SurfaceFunctionPrevious
+        // because the current Surface Function will already have been updated from '1a' to whatever by the time this method is called.
+        if (segment.SurfaceFunctionPrevious == "1a") { return previousSetupCode; }
+
         treatmentCategory = treatmentCategory.ToLower();
 
+        double surfaceExpectedLife = segment.SurfaceExpectedLife;
+        double distressProb = this.DistressProbability(segment);
+
         // Expected new values for AADI and T100 
-        double aadiExpected = this.GetAadiExpectedValue(segment);
-        double resetT100 = _T100Max * (1 - this.DistressProbability(segment));
-
-        // For Resurfacing, get the resetted AADI based on the current value (distress before reset) and the
-        // reset limiting values from lookups
-        string setupCode = $"{_resetLimit1},{aadiExpected}|{_resetLimit2},1";
-        PieceWiseLinearModelGeneric interpolator = new PieceWiseLinearModelGeneric(setupCode, false);
-        double aadiResurfacing = interpolator.GetValue(currentValue);
-
-        //Approximate previous distress progression, per year, based on Age and Distress % before reset (add 1 to avoid division by zero)
-        double previousRate = currentValue / (1 + segment.SurfaceAgeBeforeReset);
-
-        //T100 based on approximate increase in distress % per year before reset
-        double t100Pre = 100 / previousRate;
-
-        //Adjusted T100 based on approximate increase in distress % per year before reset, multiplied by adjustment/improvement factor
-        double t100Adjusted = t100Pre * _resetLimit3;
-
-        //Final, clamped value for T100 reset in case of resurfacing
-        t100Adjusted = Math.Clamp(t100Adjusted, _T100Min, _T100Max);
-
-        //For Resurfacing, adjust T100 for based on lookup limits and value before treatment
-        setupCode = $"{_resetLimit1},{resetT100}|{_resetLimit2},{t100Adjusted}";
-        interpolator = new PieceWiseLinearModelGeneric(setupCode, false);
-        double t100Resurfacing = interpolator.GetValue(currentValue);
-
+        double aadiExpected = this.GetAadiExpectedValue(surfaceExpectedLife, distressProb);
+        double resetT100 = _T100Max * (1 - distressProb);
+                        
         string resetCode = "";
         if (treatmentCategory.Contains("rehab"))
         {
@@ -262,17 +308,18 @@ public abstract class SCurveDistress
         }
         else if (treatmentCategory.Contains("holding"))
         {
-            //Number of years added to AADI because of improvements in holding action            
-            double aadiForHolding = aadiResurfacing + _AadiBoostForHoldingAction;
-
-            // Ensure that AADI for holding action is not less than allowed minimum or more than value for Rehab (expected AADI)
-            aadiForHolding = Math.Clamp(aadiForHolding, _AADIMin, aadiExpected);
-
-            resetCode = $"{Math.Round(aadiForHolding,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(t100Resurfacing,2)}";
+            double resetPenaltyFactorHolding = _resetPenaltyCurveForHoldingAction.GetValue(currentValue);
+            double aadiForHolding = Math.Clamp(aadiExpected * resetPenaltyFactorHolding, _AADIMin, _AADIMax);
+            double t100ForHolding = Math.Clamp(resetT100 * resetPenaltyFactorHolding, _T100Min, _T100Max);
+            resetCode = $"{Math.Round(aadiForHolding,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(t100ForHolding, 2)}";
         }
         else
         {
             //Assume Resurfacing
+
+            double resetPenaltyFactorResurf = _resetPenaltyCurveForResurfacing.GetValue(currentValue);            
+            double aadiResurfacing = Math.Clamp(aadiExpected * resetPenaltyFactorResurf,_AADIMin, _AADIMax);
+            double t100Resurfacing = Math.Clamp(resetT100 * resetPenaltyFactorResurf, _T100Min, _T100Max);
             resetCode = $"{Math.Round(aadiResurfacing,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(t100Resurfacing,2)}";
         }
 
@@ -330,7 +377,13 @@ public abstract class SCurveDistress
         return nextValue;
     }
 
-    public abstract double GetValueAfterReset(RoadSegment segment, double currentValue, string treatmentCategory);
+    public double GetValueAfterReset(RoadSegment segment, double currentValue, string treatmentCategory)
+    {
+        // Generally, all treatments reset distress to zero. However, the S-Curve parameters will change based on the treatment
+        // type and the current (before treatment) distress progression. See method: 'GetResettedSetupValues'
+
+        return 0; // Default implementation, can be overridden by derived classes
+    }
 
 }
 
@@ -343,21 +396,6 @@ public class FlushingModel : SCurveDistress
 
     }
 
-    public override void Setup(double aadiMin, double aadiMax, double t100Min, double t100Max, double ivMin, double ivMax, double initialValueExpected = 0.5)
-    {
-        _AADIMin = aadiMin;
-        _AADIMax = aadiMax;
-        _T100Max = t100Max;
-        _T100Min = t100Min;
-        _InitValMin = ivMin;
-        _InitValMax = ivMax;
-        _InitValExpected = initialValueExpected;
-
-        // Initialize the reset curves for Mesh Cracks
-        _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
-        _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);              
-    }
-
     public override double DistressProbability(RoadSegment segment)
     {
         //logit(-11.95 + 10 * para_surf_cs_flag + -0.37 * pcal_is_urban_flag + 0.05 * para_hcv_risk)
@@ -368,29 +406,32 @@ public class FlushingModel : SCurveDistress
         return Logit(value);
     }
 
-    public override double GetValueAfterReset(RoadSegment segment , double currentValue, string treatmentCategory)
-    {
-        //All treatments reset distress to zero. However, the S-Curve parameters will change based on the treatment
-        // type and the current (before treatment) distress progression. See method: 'GetResettedSetupValues'
-        return 0;  
-    }
 
     /// <summary>
     /// Gets the values for AADI, T100 and Initial value after a reset, based on the current value of the distress and the treatment category.
+    /// For Flushing, we assume that the distress is fully reset to zero after a treatment, so we return the expected values without applying any
+    /// penalty factor based on the distress before treatment.
     /// </summary>    
     /// <param name="currentValue">Value for the distress before Treatment is applied</param>
     /// <param name="treatmentCategory">Treatment Category. We expect Rehabilitation treatments to start with 'rehab' and holding treatments
     /// category to start with 'holding' (not case sensitive). All other treatments are presume to be Resurfacings.</param>
     /// <returns>Values in concatenated string with [AADI_InitialValue_T100]</returns>
-    public override string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory)
+    public override string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory, string previousSetupCode)
     {
+        // If the treatment is a second coat over a holding action, we assume the distress has been reset and the S-curve parameters
+        // reset at the time of the holing action still apply. Thus we return the previous setup code.
+        if (segment.SurfaceFunction == "1a") { return previousSetupCode; }
+
         treatmentCategory = treatmentCategory.ToLower();
 
+        double surfaceExpectedLife = segment.SurfaceExpectedLife;
+        double distressProb = this.DistressProbability(segment);
+
         // Expected new values for AADI and T100 
-        double aadiExpected = this.GetAadiExpectedValue(segment);
-        double resetT100 = _T100Max * (1 - this.DistressProbability(segment));
+        double aadiExpected = this.GetAadiExpectedValue(surfaceExpectedLife, distressProb);
+        double resetT100 = _T100Max * (1 - distressProb);
         
-        string resetCode = $"{Math.Round(aadiExpected,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(resetT100,2)}"; ;
+        string resetCode = $"{Math.Round(aadiExpected,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(resetT100,2)}"; 
         
         return resetCode;
     }
@@ -405,23 +446,7 @@ public class EdgeBreakModel : SCurveDistress
     {
 
     }
-
-    public override void Setup(double aadiMin, double aadiMax, double t100Min, double t100Max, double ivMin, double ivMax, double initialValueExpected = 0.5)
-    {
-        _AADIMin = aadiMin;
-        _AADIMax = aadiMax;
-        _T100Max = t100Max;
-        _T100Min = t100Min;
-        _InitValMin = ivMin;
-        _InitValMax = ivMax;
-        _InitValExpected = initialValueExpected;
-
-        // Initialize the reset curves for Mesh Cracks
-        _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
-        _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);
-        
-    }
-
+    
     public override double DistressProbability(RoadSegment segment)
     {
         //logit(4 + -1 * pcal_gen_width + -10 * pcal_is_urban_flag)
@@ -431,27 +456,29 @@ public class EdgeBreakModel : SCurveDistress
         return Logit(value);
     }
 
-    public override double GetValueAfterReset(RoadSegment segment, double currentValue, string treatmentCategory)
-    {
-        //All treatments reset distress to zero. However, the S-Curve parameters will change based on the treatment
-        // type and the current (before treatment) distress progression. See method: 'GetResettedSetupValues'
-        return 0;
-    }
-
     /// <summary>
     /// Gets the values for AADI, T100 and Initial value after a reset, based on the current value of the distress and the treatment category.
+    /// For Edge Break, we assume that the distress is fully reset to zero after a treatment, so we return the expected values without applying any
+    /// penalty factor based on the distress before treatment.
     /// </summary>    
     /// <param name="currentValue">Value for the distress before Treatment is applied</param>
     /// <param name="treatmentCategory">Treatment Category. We expect Rehabilitation treatments to start with 'rehab' and holding treatments
     /// category to start with 'holding' (not case sensitive). All other treatments are presume to be Resurfacings.</param>
     /// <returns>Values in concatenated string with [AADI_InitialValue_T100]</returns>
-    public override string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory)
+    public override string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory, string previousSetupCode)
     {
+        // If the treatment is a second coat over a holding action, we assume the distress has been reset and the S-curve parameters
+        // reset at the time of the holing action still apply. Thus we return the previous setup code.
+        if (segment.SurfaceFunction == "1a") { return previousSetupCode; }
+
         treatmentCategory = treatmentCategory.ToLower();
 
+        double surfaceExpectedLife = segment.SurfaceExpectedLife;
+        double distressProb = this.DistressProbability(segment);
+
         // Expected new values for AADI and T100 
-        double aadiExpected = this.GetAadiExpectedValue(segment);
-        double resetT100 = _T100Max * (1 - this.DistressProbability(segment));
+        double aadiExpected = this.GetAadiExpectedValue(surfaceExpectedLife, distressProb);
+        double resetT100 = _T100Max * (1 - distressProb);
         
         string resetCode = $"{Math.Round(aadiExpected, 2)}_{Math.Round(_InitValExpected, 2)}_{Math.Round(resetT100, 2)}";
 
@@ -468,22 +495,7 @@ public class ScabbingModel : SCurveDistress
     {
 
     }
-
-    public override void Setup(double aadiMin, double aadiMax, double t100Min, double t100Max, double ivMin, double ivMax, double initialValueExpected = 0.5)
-    {
-        _AADIMin = aadiMin;
-        _AADIMax = aadiMax;
-        _T100Max = t100Max;
-        _T100Min = t100Min;
-        _InitValMin = ivMin;
-        _InitValMax = ivMax;
-        _InitValExpected = initialValueExpected;
-
-        // Initialize the reset curves for Mesh Cracks
-        _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
-        _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);
-    }
-
+    
     public override double DistressProbability(RoadSegment segment)
     {
         //logit(-2.89 + 1.71 * para_surf_cs_flag + 0.62 * pcal_is_urban_flag + 0.06 * para_hcv_risk)
@@ -494,27 +506,29 @@ public class ScabbingModel : SCurveDistress
         return Logit(value);
     }
 
-    public override double GetValueAfterReset(RoadSegment segment, double currentValue, string treatmentCategory)
-    {
-        //All treatments reset distress to zero. However, the S-Curve parameters will change based on the treatment
-        // type and the current (before treatment) distress progression. See method: 'GetResettedSetupValues'
-        return 0;
-    }
-
     /// <summary>
     /// Gets the values for AADI, T100 and Initial value after a reset, based on the current value of the distress and the treatment category.
+    /// For Scabbing, we assume that the distress is fully reset to zero after a treatment, so we return the expected values without applying any
+    /// penalty factor based on the distress before treatment.
     /// </summary>    
     /// <param name="currentValue">Value for the distress before Treatment is applied</param>
     /// <param name="treatmentCategory">Treatment Category. We expect Rehabilitation treatments to start with 'rehab' and holding treatments
     /// category to start with 'holding' (not case sensitive). All other treatments are presume to be Resurfacings.</param>
     /// <returns>Values in concatenated string with [AADI_InitialValue_T100]</returns>
-    public override string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory)
+    public override string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory, string previousSetupCode)
     {
+        // If the treatment is a second coat over a holding action, we assume the distress has been reset and the S-curve parameters
+        // reset at the time of the holing action still apply. Thus we return the previous setup code.
+        if (segment.SurfaceFunction == "1a") { return previousSetupCode; }
+
         treatmentCategory = treatmentCategory.ToLower();
 
+        double surfaceExpectedLife = segment.SurfaceExpectedLife;
+        double distressProb = this.DistressProbability(segment);
+
         // Expected new values for AADI and T100 
-        double aadiExpected = this.GetAadiExpectedValue(segment);
-        double resetT100 = _T100Max * (1 - this.DistressProbability(segment));
+        double aadiExpected = this.GetAadiExpectedValue(surfaceExpectedLife, distressProb);
+        double resetT100 = _T100Max * (1 - distressProb);
 
         string resetCode = $"{Math.Round(aadiExpected,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(resetT100,2)}"; 
 
@@ -531,29 +545,7 @@ public class LTCracksModel : SCurveDistress
     {
 
     }
-
-    public override void Setup(double aadiMin, double aadiMax, double t100Min, double t100Max, double ivMin, double ivMax, double initialValueExpected = 0.5)
-    {
-        _AADIMin = aadiMin;
-        _AADIMax = aadiMax;
-        _T100Max = t100Max;
-        _T100Min = t100Min;
-        _InitValMin = ivMin;
-        _InitValMax = ivMax;
-        _InitValExpected = initialValueExpected;
-
-        // Initialize the reset curves for Mesh Cracks
-        _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
-        _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);
-
-        _resetLimit1 = _frameworkModel.GetLookupValueNumber("distress_reset", "lt_cracks_reset_limit1");
-        _resetLimit2 = _frameworkModel.GetLookupValueNumber("distress_reset", "lt_cracks_reset_limit2");
-        _resetLimit3 = _frameworkModel.GetLookupValueNumber("distress_reset", "lt_cracks_reset_limit3");
-
-        _AadiBoostForHoldingAction = _frameworkModel.GetLookupValueNumber("resets_general", "aadi_boost_holding_lt_cracks");
-
-    }
-
+    
     public override double DistressProbability(RoadSegment segment)
     {
         //logit(-1.39 + -1.24 * para_surf_cs_flag + 0.82 * pcal_is_urban_flag + 0.09 * para_hcv_risk + 0.03 * para_scabb_pct)
@@ -564,13 +556,7 @@ public class LTCracksModel : SCurveDistress
             + (0.03 * segment.PctScabbing);
         return Logit(value);
     }
-
-    public override double GetValueAfterReset(RoadSegment segment, double currentValue, string treatmentCategory)
-    {
-        //All treatments reset distress to zero. However, the S-Curve parameters will change based on the treatment
-        // type and the current (before treatment) distress progression. See method: 'GetResettedSetupValues'
-        return 0;
-    }
+    
 }
 
 public class MeshCrackModel : SCurveDistress
@@ -579,28 +565,6 @@ public class MeshCrackModel : SCurveDistress
     public MeshCrackModel(ModelBase model) : base(model)
     {
         
-    }
-
-    public override void Setup(double aadiMin, double aadiMax, double t100Min, double t100Max, double ivMin, double ivMax, double initialValueExpected = 0.5)
-    {
-        _AADIMin = aadiMin;
-        _AADIMax = aadiMax;
-        _T100Max = t100Max;
-        _T100Min = t100Min;
-        _InitValMin = ivMin;
-        _InitValMax = ivMax;
-        _InitValExpected = initialValueExpected;
-
-        // Initialize the reset curves for Mesh Cracks
-        _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
-        _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);
-
-        _resetLimit1 = _frameworkModel.GetLookupValueNumber("distress_reset", "mesh_cracks_reset_limit1");
-        _resetLimit2 = _frameworkModel.GetLookupValueNumber("distress_reset", "mesh_cracks_reset_limit2");
-        _resetLimit3 = _frameworkModel.GetLookupValueNumber("distress_reset", "mesh_cracks_reset_limit3");
-
-        _AadiBoostForHoldingAction = _frameworkModel.GetLookupValueNumber("resets_general", "aadi_boost_holding_mesh_cracks");
-
     }
 
     public override double DistressProbability(RoadSegment segment)
@@ -614,13 +578,7 @@ public class MeshCrackModel : SCurveDistress
             + (0.01 * segment.PctScabbing);
         return Logit(value);
     }
-
-    public override double GetValueAfterReset(RoadSegment segment, double currentValue, string treatmentCategory)
-    {
-        //All treatments reset distress to zero. However, the S-Curve parameters will change based on the treatment
-        // type and the current (before treatment) distress progression. See method: 'GetResettedSetupValues'
-        return 0;
-    }
+        
 }
 
 public class ShovingModel : SCurveDistress
@@ -630,29 +588,7 @@ public class ShovingModel : SCurveDistress
     {
 
     }
-
-    public override void Setup(double aadiMin, double aadiMax, double t100Min, double t100Max, double ivMin, double ivMax, double initialValueExpected = 0.5)
-    {
-        _AADIMin = aadiMin;
-        _AADIMax = aadiMax;
-        _T100Max = t100Max;
-        _T100Min = t100Min;
-        _InitValMin = ivMin;
-        _InitValMax = ivMax;
-        _InitValExpected = initialValueExpected;
-
-        // Initialize the reset curves for Mesh Cracks
-        _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
-        _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);
-
-        _resetLimit1 = _frameworkModel.GetLookupValueNumber("distress_reset", "shove_reset_limit1");
-        _resetLimit2 = _frameworkModel.GetLookupValueNumber("distress_reset", "shove_reset_limit2");
-        _resetLimit3 = _frameworkModel.GetLookupValueNumber("distress_reset", "shove_reset_limit3");
-
-        _AadiBoostForHoldingAction = _frameworkModel.GetLookupValueNumber("resets_general", "aadi_boost_holding_shove");
-
-    }
-
+    
     public override double DistressProbability(RoadSegment segment)
     {
         //logit(-3.63 + 0.62 * para_surf_cs_flag + 0.31 * pcal_is_urban_flag + 0.08 * para_hcv_risk + 0.03 * para_mesh_cracks_pct + 0.01 * para_scabb_pct)
@@ -665,12 +601,6 @@ public class ShovingModel : SCurveDistress
         return Logit(value);
     }
 
-    public override double GetValueAfterReset(RoadSegment segment, double currentValue, string treatmentCategory)
-    {
-        //All treatments reset distress to zero. However, the S-Curve parameters will change based on the treatment
-        // type and the current (before treatment) distress progression. See method: 'GetResettedSetupValues'
-        return 0;
-    }
 }
 
 public class PotholeModel : SCurveDistress
@@ -678,28 +608,6 @@ public class PotholeModel : SCurveDistress
 
     public PotholeModel(ModelBase model) : base(model)
     {
-
-    }
-
-    public override void Setup(double aadiMin, double aadiMax, double t100Min, double t100Max, double ivMin, double ivMax, double initialValueExpected = 0.5)
-    {
-        _AADIMin = aadiMin;
-        _AADIMax = aadiMax;
-        _T100Max = t100Max;
-        _T100Min = t100Min;
-        _InitValMin = ivMin;
-        _InitValMax = ivMax;
-        _InitValExpected = initialValueExpected;
-
-        // Initialize the reset curves for Mesh Cracks
-        _resetCurveForCS = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,2 | 30,10 | 100,40", false);
-        _resetCurveForAC = new PieceWiseLinearModelGeneric("0,0 | 2,0 | 10,1 | 30,5 | 100,30", false);
-
-        _resetLimit1 = _frameworkModel.GetLookupValueNumber("distress_reset", "poth_reset_limit1");
-        _resetLimit2 = _frameworkModel.GetLookupValueNumber("distress_reset", "poth_reset_limit2");
-        _resetLimit3 = _frameworkModel.GetLookupValueNumber("distress_reset", "poth_reset_limit3");
-
-        _AadiBoostForHoldingAction = _frameworkModel.GetLookupValueNumber("resets_general", "aadi_boost_holding_poth");
 
     }
 
@@ -716,10 +624,4 @@ public class PotholeModel : SCurveDistress
         return Logit(value);
     }
 
-    public override double GetValueAfterReset(RoadSegment segment, double currentValue, string treatmentCategory)
-    {
-        //All treatments reset distress to zero. However, the S-Curve parameters will change based on the treatment
-        // type and the current (before treatment) distress progression. See method: 'GetResettedSetupValues'
-        return 0;
-    }
 }

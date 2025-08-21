@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "pOEVEcOMBVw=",
+  "dgSpecHash": "u5qG3YcCs9M=",
   "success": true,
-  "projectFilePath": "C:\\aa_git_repos\\JCassDefaultRoadModel\\JCassDefaultRoadModel.csproj",
+  "projectFilePath": "C:\\aa_git_repos\\default_road_model\\JCassDefaultRoadModel_V1\\JCassDefaultRoadModelV1.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\fritz\\.nuget\\packages\\azure.core\\1.36.0\\azure.core.1.36.0.nupkg.sha512",
     "C:\\Users\\fritz\\.nuget\\packages\\azure.storage.blobs\\12.19.1\\azure.storage.blobs.12.19.1.nupkg.sha512",

@@ -24,15 +24,14 @@ public class Constants
     private DateTime _baseDate; 
     private int _shortTermPeriod;
 
-    private double _minSdiToTreat;
-    private double _minPdiToTreat;
+    // Related to Candidate Selection
     private double _minSlaToTreatAc;
     private double _minSlaToTreatCs;
     private double _minSurfAge;
-    private double _minAdtThreshold;
-    private double _shortSegLength;
-    private double _shortSegDistress1Limit;
-    private double _shortSegDistress2Limit;
+    private double _min_periods_to_next_treat;
+    private double _min_sdi_to_treat;
+    private double _min_pdi_to_treat;
+
 
     private double _potholeBoostFactor;
 
@@ -58,6 +57,8 @@ public class Constants
     /// </summary>
     public DateTime BaseDate { get { return _baseDate; } }
 
+    #region Candidate Selection related constants
+
     /// <summary>
     /// Number of modelling periods considered short term for purposes of trigger adjustment. Used in Candidate Selection.
     /// </summary>
@@ -67,27 +68,19 @@ public class Constants
     }
     
     /// <summary>
-    /// Minimum Surface Distress Index (SDI) to trigger candidate selection. Used to throttle candidate selection.
-    /// </summary>
-    public double CSMinSdiToTreat
-    {
-        get { return _minSdiToTreat; }
-    }
-
-    /// <summary>
-    /// Minimum Pavement Distress Index (PDI) to trigger candidate selection. Used to throttle candidate selection.
-    /// </summary>
-    public double CSMinPdiToTreat
-    {
-        get { return _minPdiToTreat; }
-    }
-
-    /// <summary>
     /// Minimum Surface Life Achieved to consider for AC - gatekeeper that can be used to throttle treatments
     /// </summary>
     public double CSMinSlaToTreatAc
     {
         get { return _minSlaToTreatAc; }
+    }
+
+    /// <summary>
+    /// Minimum periods to next treatment (i.e. do not consider treatment if periods to a committed future treatment is less than this)
+    /// </summary>
+    public double CSMinPeriodsToNextTreat
+    {
+        get { return _min_periods_to_next_treat; }
     }
 
 
@@ -100,6 +93,22 @@ public class Constants
     }
 
     /// <summary>
+    /// Minimum Surface Distress Index (SDI) to consider for treatment (EITHER condition applied with minimum PDI)
+    /// </summary>
+    public double CSMinSDIToTreat
+    {
+        get { return _min_sdi_to_treat; }       
+    }
+
+    /// <summary>
+    /// Minimum Pavemenbt Distress Index (PDI) to consider for treatment.  (EITHER condition applied with minimum SDI)    
+    /// </summary>
+    public double CSMinPDIToTreat
+    {
+        get { return _min_pdi_to_treat; }
+    }
+
+    /// <summary>
     /// Minimum surface age to consider ANY treatment except second coats.
     /// </summary>
     public double CSMinSurfAge
@@ -107,37 +116,7 @@ public class Constants
         get { return _minSurfAge; }
     }
 
-    /// <summary>
-    /// Minimum Average Daily Traffic (ADT) - do not treat below this level, it can be done with Routine Maintenance.
-    /// </summary>
-    public double CSMinAdtThreshold
-    {
-        get { return _minAdtThreshold; }
-    }
-
-    /// <summary>
-    /// Length, in metres, that delineates the limit below which a segment is deemed "short".
-    /// </summary>
-    public double CSShortSegLength
-    {
-        get { return _shortSegLength; }
-    }
-
-    /// <summary>
-    /// Minimum length for any SINGLE distress to trigger short segment for treatment (short term triggers).
-    /// </summary>
-    public double CSShortSegDistress1Limit
-    {
-        get { return _shortSegDistress1Limit; }
-    }
-
-    /// <summary>
-    /// Minimum length for any TWO distresses to trigger short segment for treatment (short term triggers).
-    /// </summary>
-    public double CSShortSegDistress2Limit
-    {
-        get { return _shortSegDistress2Limit; }
-    }
+    #endregion
 
     /// <summary>
     /// Boosting factor for pothole area to bring it to scale with other distresses
@@ -258,16 +237,16 @@ public class Constants
     public Constants(Dictionary<string, Dictionary<string, object>> lookupSets)
     {        
         _baseDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(lookupSets["general"]["base_date"]);
-        _shortTermPeriod = Convert.ToInt32(lookupSets["candidate_selection"]["short_term_periods"]);
-        _minSdiToTreat = Convert.ToDouble(lookupSets["candidate_selection"]["min_sdi_to_treat"]);
-        _minPdiToTreat = Convert.ToDouble(lookupSets["candidate_selection"]["min_pdi_to_treat"]);
+        _shortTermPeriod = Convert.ToInt32(lookupSets["general"]["short_term_periods"]);
+
+        // Candidate Selection related constants
+        _min_periods_to_next_treat = Convert.ToInt32(lookupSets["candidate_selection"]["min_periods_to_next_treat"]);
+        _min_sdi_to_treat = Convert.ToDouble(lookupSets["candidate_selection"]["min_sdi_to_treat"]);
+        _min_pdi_to_treat = Convert.ToDouble(lookupSets["candidate_selection"]["min_pdi_to_treat"]);
         _minSlaToTreatAc = Convert.ToDouble(lookupSets["candidate_selection"]["min_sla_to_treat_ac"]);
         _minSlaToTreatCs = Convert.ToDouble(lookupSets["candidate_selection"]["min_sla_to_treat_cs"]);
         _minSurfAge = Convert.ToDouble(lookupSets["candidate_selection"]["min_surf_age"]);
-        _minAdtThreshold = Convert.ToDouble(lookupSets["candidate_selection"]["min_adt_threshold"]);
-        _shortSegLength = Convert.ToDouble(lookupSets["candidate_selection"]["short_seg_length"]);
-        _shortSegDistress1Limit = Convert.ToDouble(lookupSets["candidate_selection"]["short_seg_distress1_limit"]);
-        _shortSegDistress2Limit = Convert.ToDouble(lookupSets["candidate_selection"]["short_seg_distress2_limit"]);
+        
 
         _potholeBoostFactor = Convert.ToDouble(lookupSets["distress"]["poth_booster"]);
 

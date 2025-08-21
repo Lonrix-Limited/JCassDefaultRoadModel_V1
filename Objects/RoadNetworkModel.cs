@@ -57,44 +57,26 @@ public class RoadNetworkModel : DomainModelBase
     private void SetupDistressModels()
     {
 
-        // Get the thresholds for all S-Curve functions from the lookup table
-        double aadiMin = this.model.GetLookupValueNumber("distress", "aadi_min");
-        double aadiMax = this.model.GetLookupValueNumber("distress", "aadi_max");
-
-        double initValMin = this.model.GetLookupValueNumber("distress", "iv_min");
-        double initValMax = this.model.GetLookupValueNumber("distress", "iv_max");
-                
-        double initValExpected = this.model.GetLookupValueNumber("distress", "iv_expected");
-        
-        double t100Min = this.model.GetLookupValueNumber("distress", "t100_min");
-        double t100Max = this.model.GetLookupValueNumber("distress", "t100_max");
-
         this.FlushingModel = new FlushingModel(this.model);
-        FlushingModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+        FlushingModel.Setup("s_curve_default");
 
         this.EdgeBreakModel = new EdgeBreakModel(this.model);
-        EdgeBreakModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+        EdgeBreakModel.Setup("s_curve_default");
 
         this.ScabbingModel = new ScabbingModel(this.model);
-        ScabbingModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+        ScabbingModel.Setup("s_curve_default");
 
         this.LTCracksModel = new LTCracksModel(this.model);
-        LTCracksModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+        LTCracksModel.Setup("s_curve_default");
 
         this.MeshCrackModel = new MeshCrackModel(this.model);
-        MeshCrackModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
+        MeshCrackModel.Setup("s_curve_default");
 
         this.ShovingModel = new ShovingModel(this.model);
-        ShovingModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMin, initValMax, initValExpected);
-
-        // Note: For potholes, the initial values are different from other distresses. This is because potholes normally comprise
-        // small percentage of total area.
-        double initValMinPoth = this.model.GetLookupValueNumber("distress", "iv_poth_min");
-        double initValMaxPoth = this.model.GetLookupValueNumber("distress", "iv_poth_max");
-        double initValExpectedPotholes = this.model.GetLookupValueNumber("distress", "iv_poth_expected");
-
+        ShovingModel.Setup("s_curve_default");
+        
         this.PotholeModel = new PotholeModel(this.model);
-        PotholeModel.Setup(aadiMin, aadiMax, t100Min, t100Max, initValMinPoth, initValMaxPoth, initValExpectedPotholes);
+        PotholeModel.Setup("s_curve_potholes");
 
     }
 
@@ -110,7 +92,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 1998)
+            if (iElemIndex == 89)
             {
                 int kk = 9;
             }
@@ -149,9 +131,9 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 206)
+            if (iElemIndex == 456)
             {
-                int kk = 9; // Debugging breakpoint
+                int kk = 9;
             }
 
             Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
@@ -191,7 +173,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 2133 && iPeriod == 2)
+            if (iElemIndex == 89 && iPeriod == 1)
             {
                 int kk = 9;
             }
@@ -250,7 +232,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 1501 && iPeriod == 8)
+            if (iElemIndex == 89 && iPeriod == 1)
             {
                 int kk = 9;
             }

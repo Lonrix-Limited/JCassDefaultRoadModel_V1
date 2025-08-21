@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+	<Target Name="CustomCopyDll" AfterTargets="Build">
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Users\fritz\Juno Services Dropbox\Local_Authorities\Christchurch CC\2025\cassandra\domain_model\" SkipUnchangedFiles="true" />
+	</Target>
+
+	<ItemGroup>
+	  <Compile Remove="Objects\CandidateSelectorV0.cs" />
+	  <Compile Remove="Objects\SCurveDistress - Copy.cs" />
+	  <Compile Remove="Objects\TreatmentsTriggerMCDA - Copy.cs" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <ProjectReference Include="..\..\..\Users\fritz\source\repos\jcass_jfunctions_project\JCass_Functions\JCass_Functions.csproj" />
+	  <ProjectReference Include="..\..\..\Users\fritz\source\repos\jcass_main\JCass_Core\JCass_Core.csproj" />
+	  <ProjectReference Include="..\..\..\Users\fritz\source\repos\jcass_main\JCass_ModelCore\JCass_ModelCore.csproj" />
+	</ItemGroup>
+
+
+</Project>

@@ -40,10 +40,7 @@ public class TreatmentsTriggerMCDA
         // again here, because the Candidate Selection result was last evaluated at the last epoch, while the periods to
         // next treatment have now changed since the period has changed
         int periodsToNextTreatment = Convert.ToInt32(infoFromModel["periods_to_next_treatment"]);
-        if (periodsToNextTreatment <= 6) 
-        {
-            return triggeredTreatments;
-        }        
+        if (periodsToNextTreatment <= 6) { return triggeredTreatments; }        
         
         // Check if second coat after Rehabilitation should be added. If so, since we are forcing it, do not look
         // for other candidate treatments
@@ -52,46 +49,35 @@ public class TreatmentsTriggerMCDA
 
         // Check if a second coat after Preseal Repairs should be added, If so, since we are forcing it, do not look
         // for other candidate treatments
-        this.AddHoldingFollowUpSurfacingIfValid(segment, period, triggeredTreatments);
+        this.AddHoldingFollowUpChipsealIfValid(segment, period, triggeredTreatments);
         if (triggeredTreatments.Count > 0) return triggeredTreatments;
 
         // Check if a birthday treatment should be added. If so, since we are forcing it, do not look for other candidate treatments
         this.AddBirthdayTreatmentBlocksOrConcreteIfValid(segment, period, triggeredTreatments);
         if (triggeredTreatments.Count > 0) return triggeredTreatments;
 
-        // If we get here, we know that no second coats or birthday treatments are added. Now find candidate treatments
-        // to add to the optimisation stage
-        this.AddPreservationTreatmentIfValid(segment, period, triggeredTreatments);
-        
+        //---------------------------------------------------------------------------------------------------------------------------------
+        //      If we get here, we know that no second coats or birthday treatments are added.
+        //      Now find candidate treatments to add to the optimisation stage
+        //---------------------------------------------------------------------------------------------------------------------------------
+
+        this.AddPreservationChipsealIfValid(segment, period, triggeredTreatments);        
         this.AddPresealOnChipsealfValid(segment, period, triggeredTreatments);
-        this.AddPresealOnAsphaltIfValid(segment, period, triggeredTreatments);
+
+        this.AddPreservationThinACIfValid(segment, period, triggeredTreatments);
+        this.AddAcHeavyMaintenanceIfValid(segment, period, triggeredTreatments);
+
         this.AddRehabilitationIfValid(segment, period, triggeredTreatments);
+
+        //---------------------------------------------------------------------------------------------------------------------------------
+        //---------------------------------------------------------------------------------------------------------------------------------
 
 
         return triggeredTreatments;
     }
 
     #region Preliminary checks for treatments
-
-    private bool CanDoChipsealPreservation(RoadSegment segment)
-    {
-        //n : renw_secondcoat_flag = 0 AND n : para_csl_flag = 1 AND n : pcal_next_surf_cs_flag = 1 AND n : periods_to_next_treatment > 6
-
-        //Note: Check for 'periods_to_next_treatment > 6' is done in CandidateSelector.EvaluateCandidate method, so we do not need to check it here again.
-
-        // If next surface is not intended to be ChipSeal, do not add a treatment
-        if (segment.NextSurfaceIsChipSeal == false) return false;
-
-        // Do not add a treatment if the current surface is not ChipSeal
-        // ToDo: needs discussion. May be cases where current surfacing is AC
-        //if (segment.SurfaceIsChipSealFlag == 0) return false;
-
-        if (segment.SecondCoatNeeded) return false; // Do not add a preservation treatment if a second coat is needed
-
-        return true;
-
-    }
-
+        
     private bool CanDoAsphaltPreservationOrPreseal(RoadSegment segment, int period, bool isForPreseal)
     {
         //n : renw_secondcoat_flag = 0 AND n : para_csl_flag = 1 AND n : pcal_next_surf_cs_flag = 1 AND n : periods_to_next_treatment > 6
@@ -156,54 +142,7 @@ public class TreatmentsTriggerMCDA
 
     }
 
-    private bool CanDoPresealOnChipSeal(RoadSegment segment, int iPeriod, out double presealAreaFraction)
-    {
-        //n : renw_preserve_cs_flag = 1 AND n : renw_preseal_area_fraction > 0 AND t : para_surf_func != 1a  AND n : periods_to_next_treatment > 6
-
-        //Note: Check for 'periods_to_next_treatment > 6' is done in CandidateSelector.EvaluateCandidate method, so we do not need to check it here again.
-
-        presealAreaFraction = 0.0; // Default value
-
-        if (CanDoChipsealPreservation(segment) == false) return false;
-
-        if (segment.SurfaceFunction == "1a") return false; // Do not add a preseal treatment if the surface function is "1a"
-
-        JFuncLookupNumber presealAreaFractionLookup = new JFuncLookupNumber("preseal_effective: para_pdi", _frameworkModel.Lookups);
-        Dictionary<string, object> paramVals = new Dictionary<string, object>
-        {
-            { "para_pdi", segment.PavementDistressIndex }
-        };
-        presealAreaFraction = Convert.ToDouble(presealAreaFractionLookup.Evaluate(paramVals));
-        if (presealAreaFraction <= 0.0) return false; // If preseal area fraction is zero or negative, do not add a treatment
-
-        return true;
-
-    }
-
-    private bool CanDoPresealOnAsphalt(RoadSegment segment, int iPeriod, out double presealAreaFraction)
-    {
-        //n : para_csl_flag = 1 AND n : pcal_next_surf_ac_flag = 1 AND n : renw_preseal_area_fraction > 0 AND t : para_surf_func != 1a AND n : periods_to_next_treatment > 6
-
-        //Note: Check for 'periods_to_next_treatment > 6' is done in CandidateSelector.EvaluateCandidate method, so we do not need to check it here again.
-
-        presealAreaFraction = 0.0; // Default value
-
-        if (CanDoAsphaltPreservationOrPreseal(segment, iPeriod, true) == false) return false;
-        
-        if (segment.SurfaceFunction == "1a") return false; // Do not add a preseal treatment if the surface function is "1a"
-
-        JFuncLookupNumber presealAreaFractionLookup = new JFuncLookupNumber("preseal_effective: para_pdi", _frameworkModel.Lookups);
-        Dictionary<string, object> paramVals = new Dictionary<string, object>
-        {
-            { "para_pdi", segment.PavementDistressIndex }
-        };
-        presealAreaFraction = Convert.ToDouble(presealAreaFractionLookup.Evaluate(paramVals));
-        if (presealAreaFraction <= 0.0) return false; // If preseal area fraction is zero or negative, do not add a treatment
-
-        return true;
-
-    }
-
+            
     #endregion
 
     private void AddBirthdayTreatmentBlocksOrConcreteIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
@@ -241,25 +180,19 @@ public class TreatmentsTriggerMCDA
 
     }
 
-    private void AddHoldingFollowUpSurfacingIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
+    private void AddHoldingFollowUpChipsealIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
     {
+        // Only add a holding follow-up treatment if current surface function has code '1a'
+        if (segment.SurfaceFunction != "1a") return;
+
+        if (segment.NextSurfaceIsChipSeal == false) return; // If the next surface is not ChipSeal, do not add a treatment
+
         string treatmentName = "";
         string reason = "";
         string comment = "";
-        if (segment.SurfaceFunction != "1a") return;
-        
-        if (segment.NextSurfaceIsChipSeal == true)
-        {
-            if (this.CanDoChipsealPreservation(segment) == false) return;
-            treatmentName = "ChipSeal_H";
-            reason = "Pre-seal follow-up";           
-        }
-        else
-        {
-            if (this.CanDoAsphaltPreservationOrPreseal(segment, iPeriod, true) == false) return;
-            treatmentName = "ThinAC_H";
-            reason = "Pre-seal follow-up";
-        }               
+
+        treatmentName = "ChipSeal_H";
+        reason = "Pre-seal follow-up";
         double quantity = segment.AreaSquareMetre;
         TreatmentInstance treatment = new TreatmentInstance(segment.ElementIndex, treatmentName, iPeriod, quantity, true, reason, comment);
         treatment.TreatmentSuitabilityScore = 102;  //fixed high score to force this treatment to be selected if it is valid
@@ -278,20 +211,11 @@ public class TreatmentsTriggerMCDA
         }
     }
 
-    private void AddPreservationTreatmentIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
+    private void AddPreservationChipsealIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
     {
-        string treatmentName = "";
-        if (segment.NextSurfaceIsChipSeal == true)
-        {
-            if (this.CanDoChipsealPreservation(segment) == false) return;
-            treatmentName = "ChipSeal_P";
-        }
-        else
-        {
-            if (this.CanDoAsphaltPreservationOrPreseal(segment, iPeriod, false) == false) return;
-            treatmentName = "ThinAC_P";
-        }
-
+        string treatmentName = "ChipSeal_P";
+        if (segment.NextSurfaceIsChipSeal == false) return;
+        
         // If the rut depth is above the maximum threshold, do not add a treatment
         if (segment.RutParameterValue > _domainModel.Constants.TSSPreserveMaxRut) return;
 
@@ -314,30 +238,107 @@ public class TreatmentsTriggerMCDA
         treatments.Add(treatment);
     }
 
+    private void AddPreservationThinACIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
+    {
+        string treatmentName = "ThinAC_P";
+        if (segment.NextSurfaceIsChipSeal == true) return;
+
+        // If the rut depth is above the maximum threshold, do not add a treatment
+        if (segment.RutParameterValue > _domainModel.Constants.TSSPreserveMaxRut) return;
+
+        // If the surface life achieved is not greater than the minimum required, do not add a treatment
+        if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;
+
+        // For preservation, if PDI is above the maximum threshold, do not add a treatment
+        if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdi) return;
+
+        double tssScore = TreatmentSuitabilityScorer.GetTSSForPreservationTreatment(segment, _domainModel, iPeriod);
+        if (tssScore <= _frameworkModel.Configuration.MinimumTreatmentSuitabilityScoreAllowed) return; // If the TSS score is below the minimum allowed, do not add a treatment
+
+        double sdi = segment.SurfaceDistressIndex;
+        string reason = $"SLA={Math.Round(segment.SurfaceAchievedLifePercent, 1)}";
+        string comment = $"SDI={Math.Round(sdi, 1)}, TSS={Math.Round(tssScore, 2)}";
+
+        double quantity = segment.AreaSquareMetre;
+
+        double overlayQuantity = quantity;
+        double repairQuantity = quantity * Math.Min(100, segment.PavementDistressIndex) / 100;
+        double acOverlayUnitRate = _frameworkModel.TreatmentTypes["ThinAC"].UnitRate;
+        double acRepairUnitRate = _frameworkModel.TreatmentTypes["AC_HMaint"].UnitRate;
+
+        double overlayCost = overlayQuantity * acOverlayUnitRate;
+        double repairCost = repairQuantity * acRepairUnitRate;
+
+        double totalCost = overlayCost + repairCost;
+
+        double dummyArea = totalCost; // Dummy area which is effectively the cost
+
+        // Check to ensure that the dummy rate for the combined treatment is 1.0
+        double dummyUnitRate = _frameworkModel.TreatmentTypes["ThinAC_P"].UnitRate;
+        if (dummyUnitRate != 1.0)
+        {
+            throw new InvalidOperationException($"Dummy unit rate for ThinAC treatment which combined overlay and repairs should be 1.0, but it is {dummyUnitRate}");
+        }
+
+        TreatmentInstance treatment = new TreatmentInstance(segment.ElementIndex, treatmentName, iPeriod, dummyArea, false, reason, comment);
+
+        // Assign the relative fractions of the cost to the appropriate budget categories
+        decimal repairFraction = Convert.ToDecimal(repairCost / totalCost);
+        decimal overlayFraction = Convert.ToDecimal(overlayCost / totalCost);
+        Dictionary<string, decimal> treatmentFractions = new Dictionary<string, decimal>
+        {
+            { "Resurfacing", overlayFraction },
+            { "Preseals", repairFraction }
+        };
+        treatment.AssignBudgetCategoryFractions(treatmentFractions);
+
+
+        treatment.TreatmentSuitabilityScore = tssScore;
+        treatments.Add(treatment);
+    }
+
+    private void AddAcHeavyMaintenanceIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
+    {
+        double presealAreaFraction = 0.0; // Default value
+
+        if (segment.NextSurfaceIsChipSeal == true) return;
+        
+        JFuncLookupNumber presealAreaFractionLookup = new JFuncLookupNumber("preseal_effective: para_pdi", _frameworkModel.Lookups);
+        Dictionary<string, object> paramVals = new Dictionary<string, object>
+        {
+            { "para_pdi", segment.PavementDistressIndex }
+        };
+        presealAreaFraction = Convert.ToDouble(presealAreaFractionLookup.Evaluate(paramVals));
+        if (presealAreaFraction <= 0.0) return; // If preseal area fraction is zero or negative, do not add a treatment
+
+        TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "AC_HMaint", presealAreaFraction);
+        if (treatment is not null)
+        {
+            treatments.Add(treatment);
+        }
+    }
+
     private void AddPresealOnChipsealfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
     {
-        if (this.CanDoPresealOnChipSeal(segment, iPeriod, out double presealAreaFraction) == false) return;
-        
-        // If the surface life achieved is not greater than the minimum required, do not add a treatment
-        //if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;               
+        double presealAreaFraction = 0.0; // Default value
 
+        if (segment.NextSurfaceIsChipSeal == false) return;
+
+        if (segment.SurfaceFunction == "1a") return; // Do not add a preseal treatment if the surface function is "1a"
+
+        JFuncLookupNumber presealAreaFractionLookup = new JFuncLookupNumber("preseal_effective: para_pdi", _frameworkModel.Lookups);
+        Dictionary<string, object> paramVals = new Dictionary<string, object>
+        {
+            { "para_pdi", segment.PavementDistressIndex }
+        };
+        presealAreaFraction = Convert.ToDouble(presealAreaFractionLookup.Evaluate(paramVals));
+        if (presealAreaFraction <= 0.0) return; // If preseal area fraction is zero or negative, do not add a treatment
+        
         TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "Preseal_CS", presealAreaFraction);
         if (treatment is not null) treatments.Add(treatment);
 
     }
-
-    private void AddPresealOnAsphaltIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
-    {
-        if (this.CanDoPresealOnAsphalt(segment, iPeriod, out double presealAreaFraction) == false) return;
-                
-        // If the surface life achieved is not greater than the minimum required, do not add a treatment
-        //if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;
-       
-        TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "Preseal_AC", presealAreaFraction);
-        if (treatment is not null) treatments.Add(treatment);
-
-    }
-
+    
     private void AddRehabilitationIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
     {        
         if (segment.NextSurfaceIsChipSeal == true)

@@ -33,6 +33,8 @@ public class RoadSegment
 
     private double _surfaceAge;
     private double _surfaceAgeBeforeReset;
+    private string _surfaceFunction = "unknown"; // Default value for previous surface function
+    private string _previousSurfaceFunction = "unknown"; // Default value for previous surface function
 
     #region Identification
 
@@ -212,7 +214,23 @@ public class RoadSegment
     /// <summary>
     /// Surface function.
     /// </summary>
-    public string SurfaceFunction { get; set; }
+    public string SurfaceFunction
+    {
+        get { return _surfaceFunction;  }
+        set
+        {
+            _previousSurfaceFunction = _surfaceFunction;
+            _surfaceFunction = value;
+        }
+    }
+
+    /// <summary>
+    /// Preceding Surface function - use this to check what the situation was before the last reset.
+    /// </summary>
+    public string SurfaceFunctionPrevious
+    {
+        get { return _previousSurfaceFunction; }        
+    }
 
     /// <summary>
     /// Surfacing material.
@@ -360,6 +378,7 @@ public class RoadSegment
     private string _onfStreetCategory;
     private string _onfMovementRank;
     private string _onfFreight;
+    private string _roadClass;
 
     /// <summary>
     /// Urban/Rural flag.
@@ -424,7 +443,11 @@ public class RoadSegment
     /// Road class based on ONRC value mapped to a Road Class in lookup set 'road_class'. Note: this does NOT
     /// map to the input column "file_road_class" as that column contains client-variant values.
     /// </summary>
-    public string RoadClass { get; set; }
+    public string RoadClass
+    {
+        get => _roadClass;
+        set => _roadClass = value?.ToLower();
+    }
 
     /// <summary>
     /// Number of lanes (not in use).

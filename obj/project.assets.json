@@ -4197,28 +4197,28 @@
     },
     "JCass_Core/1.0.0": {
       "type": "project",
-      "path": "../../Users/fritz/source/repos/jcass_main/JCass_Core/JCass_Core.csproj",
-      "msbuildProject": "../../Users/fritz/source/repos/jcass_main/JCass_Core/JCass_Core.csproj"
+      "path": "../../../Users/fritz/source/repos/jcass_main/JCass_Core/JCass_Core.csproj",
+      "msbuildProject": "../../../Users/fritz/source/repos/jcass_main/JCass_Core/JCass_Core.csproj"
     },
     "JCass_Data/1.0.0": {
       "type": "project",
-      "path": "../../Users/fritz/source/repos/jcass_main/JCass_Data/JCass_Data.csproj",
-      "msbuildProject": "../../Users/fritz/source/repos/jcass_main/JCass_Data/JCass_Data.csproj"
+      "path": "../../../Users/fritz/source/repos/jcass_main/JCass_Data/JCass_Data.csproj",
+      "msbuildProject": "../../../Users/fritz/source/repos/jcass_main/JCass_Data/JCass_Data.csproj"
     },
     "JCass_Economics/1.0.0": {
       "type": "project",
-      "path": "../../Users/fritz/source/repos/jcass_main/JCass_Economics/JCass_Economics.csproj",
-      "msbuildProject": "../../Users/fritz/source/repos/jcass_main/JCass_Economics/JCass_Economics.csproj"
+      "path": "../../../Users/fritz/source/repos/jcass_main/JCass_Economics/JCass_Economics.csproj",
+      "msbuildProject": "../../../Users/fritz/source/repos/jcass_main/JCass_Economics/JCass_Economics.csproj"
     },
     "JCass_Functions/1.0.0": {
       "type": "project",
-      "path": "../../Users/fritz/source/repos/jcass_jfunctions_project/JCass_Functions/JCass_Functions.csproj",
-      "msbuildProject": "../../Users/fritz/source/repos/jcass_jfunctions_project/JCass_Functions/JCass_Functions.csproj"
+      "path": "../../../Users/fritz/source/repos/jcass_jfunctions_project/JCass_Functions/JCass_Functions.csproj",
+      "msbuildProject": "../../../Users/fritz/source/repos/jcass_jfunctions_project/JCass_Functions/JCass_Functions.csproj"
     },
     "JCass_ModelCore/1.0.0": {
       "type": "project",
-      "path": "../../Users/fritz/source/repos/jcass_main/JCass_ModelCore/JCass_ModelCore.csproj",
-      "msbuildProject": "../../Users/fritz/source/repos/jcass_main/JCass_ModelCore/JCass_ModelCore.csproj"
+      "path": "../../../Users/fritz/source/repos/jcass_main/JCass_ModelCore/JCass_ModelCore.csproj",
+      "msbuildProject": "../../../Users/fritz/source/repos/jcass_main/JCass_ModelCore/JCass_ModelCore.csproj"
     }
   },
   "projectFileDependencyGroups": {
@@ -4235,11 +4235,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\aa_git_repos\\JCassDefaultRoadModel\\JCassDefaultRoadModel.csproj",
-      "projectName": "JCassDefaultRoadModel",
-      "projectPath": "C:\\aa_git_repos\\JCassDefaultRoadModel\\JCassDefaultRoadModel.csproj",
+      "projectUniqueName": "C:\\aa_git_repos\\default_road_model\\JCassDefaultRoadModel_V1\\JCassDefaultRoadModelV1.csproj",
+      "projectName": "JCassDefaultRoadModelV1",
+      "projectPath": "C:\\aa_git_repos\\default_road_model\\JCassDefaultRoadModel_V1\\JCassDefaultRoadModelV1.csproj",
       "packagesPath": "C:\\Users\\fritz\\.nuget\\packages\\",
-      "outputPath": "C:\\aa_git_repos\\JCassDefaultRoadModel\\obj\\",
+      "outputPath": "C:\\aa_git_repos\\default_road_model\\JCassDefaultRoadModel_V1\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -4303,7 +4303,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.302/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
