@@ -1012,7 +1012,7 @@ public class RoadSegment
         int periodsToNextTreatment = Convert.ToInt32(specialPlaceholders["periods_to_next_treatment"]);
         var csResult = CandidateSelector.EvaluateCandidate(this, frameworkModel, domainModel, currentPeriod, periodsToNextTreatment);
         _isCandidateForTreatment = csResult.IsValidCandidate ? 1 : 0;
-        _candidateSelectionInfo = csResult.Outcome;
+        _candidateSelectionInfo = csResult.Outcome;        
     }
 
     public void UpdateFormulaValuesFromParameters(Dictionary<string, object> parameterValues)

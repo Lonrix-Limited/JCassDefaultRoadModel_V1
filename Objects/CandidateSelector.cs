@@ -31,6 +31,14 @@ public static class CandidateSelector
     {
 		try
 		{
+            // Is the specified earliest treatment period for the segment reached?
+            // TODO: Needs discussion - should we override second coats with this flag (as is the case now), or not?
+            int adjustedPeriod = currentPeriod + 1;  //Adjusted modelling period to account for a post calc lag in para csl flag
+            if (adjustedPeriod < segment.EarliestTreatmentPeriod)
+            {
+                return new CandidateSelectionResult(false, $"Earliest treatment period {segment.EarliestTreatmentPeriod} not reached");
+            }
+
             //Does this segment require a second coat now? If so, it is a valid candidate, so look no further.
             if (segment.SecondCoatNeeded) { return new CandidateSelectionResult(true, "Second-Coat Needed"); }
 
@@ -42,14 +50,7 @@ public static class CandidateSelector
             {
                 return new CandidateSelectionResult(false, $"Next treatment in {periodsToNextTreatment} periods: too soon");
             }
-            
-            // Is the specified earliest treatment period for the segment reached?
-            int adjustedPeriod = currentPeriod + 1;  //Adjusted modelling period to account for a post calc lag in para csl flag
-            if (adjustedPeriod < segment.EarliestTreatmentPeriod)
-            {
-                return new CandidateSelectionResult(false, $"Earliest treatment period {segment.EarliestTreatmentPeriod} not reached");
-            }
-
+                        
             // Is the specified minimum surface age reached?
             if (segment.SurfaceAge < domainModel.Constants.CSMinSurfAge)
             {

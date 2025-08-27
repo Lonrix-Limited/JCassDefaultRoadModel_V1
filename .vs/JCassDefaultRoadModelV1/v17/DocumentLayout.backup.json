@@ -40,7 +40,7 @@
               "RelativeDocumentMoniker": "Objects\\RoadNetworkModel.cs",
               "ToolTip": "C:\\aa_git_repos\\default_road_model\\JCassDefaultRoadModel_V1\\Objects\\RoadNetworkModel.cs",
               "RelativeToolTip": "Objects\\RoadNetworkModel.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGwAAABIAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABsAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-08-16T00:53:46.428Z",
               "EditorCaption": ""
@@ -55,8 +55,7 @@
               "RelativeToolTip": "Objects\\Initialiser.cs",
               "ViewState": "AgIAAAwAAAAAAAAAAAAAAB0AAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-08-16T00:53:35.515Z",
-              "EditorCaption": ""
+              "WhenOpened": "2025-08-16T00:53:35.515Z"
             }
           ]
         }

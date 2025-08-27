@@ -163,18 +163,22 @@ public abstract class SCurveDistress
     public double GetInitialValue(RoadSegment segment, double currentValue, DateTime baseDate)
     {
         DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.ConditionSurveyDateString);
-        double age = (baseDate - surveyDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
-        if (age < 0) 
+        double surveyAge = (baseDate - surveyDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
+        if (surveyAge < 0) 
         { 
             _frameworkModel.LogMessage($"Distress Condition Survey date for segment {segment.FeebackCode} is in the future", false); 
         }
 
-        bool dataIsOutdated = segment.SurfaceAge < age;
+        bool dataIsOutdated = segment.SurfaceAge < surveyAge;
         if (dataIsOutdated)
         {
             // If the a surfacing has been done since the survey and surface function is '1', then there was 
             // a Rehabilitation, thus we assume value has been completely reset
             if (segment.SurfaceFunction == "1") return 0.0;
+
+            // Also check if the Pavement Age is les than survey age. If so, we assume a rehabilitation was done
+            // (this may happen if the surface function was not updated correctly)
+            if (segment.PavementAge < surveyAge) return 0; 
 
             // If the surface function is '2' or 'R', then we assume there was only a resurfacing, so return the
             // reset value for the distress type
@@ -329,6 +333,10 @@ public abstract class SCurveDistress
 
     protected double GetIncrement(RoadSegment segment, double currentValue, string sCurveSetupCode)
     {
+        if (segment.ElementIndex == 5)
+        {
+            int kk = 9;   //put breakpoint on this line
+        }
         // Parse the setup code values 
         string[] parts = sCurveSetupCode.Split('_');
         if (parts.Length != 3)
@@ -346,7 +354,7 @@ public abstract class SCurveDistress
 
         //Case where current age is within one period of AADI, meaning that initiation happened in the last period
         //In this case return the expected initial value
-        if (segment.SurfaceAge - 1 < aadi) return initialValue;
+        if (segment.SurfaceAge - aadi <= 1) return initialValue;
 
         //Case where distress is already initialised and somewhere on the progression curve. Return the increment
         //at this stage of the progression curve

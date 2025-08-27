@@ -36,10 +36,10 @@ public class Initialiser
         segment.SurfaceAge = GetSurfacingAge(segment); 
         
         segment.PctFlushing = _domainModel.FlushingModel.GetInitialValue(segment, segment.PctFlushing, _domainModel.Constants.BaseDate);
-        segment.FlushingModelInfo = _domainModel.FlushingModel.GetCalibratedInitialSetupValues(segment, segment.PctFlushing,1);
+        segment.FlushingModelInfo = _domainModel.FlushingModel.GetCalibratedInitialSetupValues(segment, segment.PctFlushing, 0.5);
 
         segment.PctEdgeBreaks = _domainModel.EdgeBreakModel.GetInitialValue(segment, segment.PctEdgeBreaks, _domainModel.Constants.BaseDate);
-        segment.EdgeBreakModelInfo = _domainModel.EdgeBreakModel.GetCalibratedInitialSetupValues(segment, segment.PctEdgeBreaks, 1);
+        segment.EdgeBreakModelInfo = _domainModel.EdgeBreakModel.GetCalibratedInitialSetupValues(segment, segment.PctEdgeBreaks, 0.5);
 
         segment.PctScabbing = _domainModel.ScabbingModel.GetInitialValue(segment, segment.PctScabbing, _domainModel.Constants.BaseDate);
         segment.ScabbingModelInfo = _domainModel.ScabbingModel.GetCalibratedInitialSetupValues(segment, segment.PctScabbing, 0.5);

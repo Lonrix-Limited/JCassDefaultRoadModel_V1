@@ -1,4 +1,5 @@
 ﻿using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.EMMA;
 using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Models;
 using System;
@@ -141,7 +142,9 @@ public static class RoadSegmentFactory
         // Flags
         segment.IsRoundaboutFlag = Convert.ToBoolean(inputAndParameterValues["file_is_roundabout_flag"]);
         segment.CanTreatFlag = Convert.ToBoolean(inputAndParameterValues["file_can_treat_flag"]);
-        segment.CanRehabFlag = Convert.ToBoolean(inputAndParameterValues["file_can_rehab_flag"]);
+        segment.CanRehabFlag = Convert.ToBoolean(inputAndParameterValues["file_can_rehab_flag"]);        
+        segment.AsphaltOkFlag = Convert.ToBoolean(inputAndParameterValues["file_ac_ok_flag"]);
+        segment.EarliestTreatmentPeriod = Convert.ToInt32(inputAndParameterValues["file_earliest_treat_period"]);
 
         // TODO: To discuss and make hardcoded value of 7 a lookup parameter
         if (iPeriod > 7) segment.CanRehabFlag = true; // For congruence with JFunction model, we allow rehab after 7 periods
