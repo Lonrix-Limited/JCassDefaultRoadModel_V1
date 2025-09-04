@@ -65,7 +65,7 @@ public class TreatmentsTriggerMCDA
         this.AddPresealOnChipsealfValid(segment, period, triggeredTreatments);
 
         this.AddPreservationThinACIfValid(segment, period, triggeredTreatments);
-        this.AddAcHeavyMaintenanceIfValid(segment, period, triggeredTreatments);
+        this.AddAcHeavyMaintenanceIfValid(segment, period, triggeredTreatments, infoFromModel);
 
         this.AddRehabilitationIfValid(segment, period, triggeredTreatments);
 
@@ -301,11 +301,24 @@ public class TreatmentsTriggerMCDA
         treatments.Add(treatment);
     }
 
-    private void AddAcHeavyMaintenanceIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
+    private void AddAcHeavyMaintenanceIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments, Dictionary<string, object> infoFromModel)
     {
         double presealAreaFraction = 0.0; // Default value
 
         if (segment.NextSurfaceIsChipSeal == true) return;
+
+        int periodsToLastNonRoutineTreatment = this.PeriodsToLastTreatmentNotRoutineMaintenance(infoFromModel);
+
+        // Do not add AC Heavy Maintenance if the periods since last non-routine treatment is less than the minimum allowed
+        if (periodsToLastNonRoutineTreatment < _domainModel.Constants.MinPeriodsBetweenACHeavyMaint) return; 
+
+        // If an asphalt overlay is allowed, then only consider this treatment if the Surface Life Achieved is less than the maximum allowed for AC Heavy Maintenance
+        // If an asphalt overlay is not allowed (e.g. due to deflection), then we can consider this treatment regardless of the SLA, otherwise the element will
+        // have to wait until it can be rehabilitated
+        if (segment.AsphaltOkFlag == true)
+        {            
+            if (segment.SurfaceAchievedLifePercent > this._domainModel.Constants.MaxSlaForACHeavyMaint) return;
+        }
         
         JFuncLookupNumber presealAreaFractionLookup = new JFuncLookupNumber("preseal_effective: para_pdi", _frameworkModel.Lookups);
         Dictionary<string, object> paramVals = new Dictionary<string, object>
@@ -401,4 +414,12 @@ public class TreatmentsTriggerMCDA
         return treatment;
     }
        
+    private int PeriodsToLastTreatmentNotRoutineMaintenance(Dictionary<string, object> infoFromModel)
+    {
+        int periodsToLastTreatment = Convert.ToInt32(infoFromModel["periods_to_last_treatment"]);
+        string lastTreatmentName = infoFromModel["last_treatment_name"].ToString();
+        if (lastTreatmentName != "RMaint") return periodsToLastTreatment;
+        return 999; // Indicates that no non-routine treatment has been placed yet
+    }
+
 }

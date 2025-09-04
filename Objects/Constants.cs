@@ -38,7 +38,7 @@ public class Constants
     private double _maintenanceCostCalibrationFactor;
     private double _maintenanceCostPDIThreshold;
 
-    // Related to TSS (Treatment Suitability Scores)
+    // Related to TSS (Treatment Suitability Scores - MCDA)
     private double _rehabExcessRutThresh;
     private double _rehabExcessRutFact;
     private double _rehabPdiRank;
@@ -50,7 +50,11 @@ public class Constants
     private double _preserveMaxPdi;
     private double _preserveMaxRut;    
     private double _preserveMinSla;           
-     
+
+    // Related to MCDA Treatment Triggering
+    private double _maxSlaForACHeavyMaint;
+    private int _minPeriodsBetweenACHeavyMaint;
+
 
     /// <summary>
     /// Base date for the model run. Maps to lookup set "gernal" and setting key "base_date".
@@ -234,6 +238,22 @@ public class Constants
         get { return _preserveMinSla; }
     }
 
+    /// <summary>
+    /// Maximum Surface Life Achieved % to consider AC Heavy Maintenance (i.e. do not consider AC Heavy Maintenance if SLA is above this value)
+    /// </summary>
+    public double MaxSlaForACHeavyMaint
+    {
+        get { return _maxSlaForACHeavyMaint; }
+    }
+
+    /// <summary>
+    /// Minimum number of periods between AC Heavy Maintenance treatment and any other previous treatment (excluding Routine Maintenance)
+    /// </summary>
+    public int MinPeriodsBetweenACHeavyMaint
+    {
+        get { return _minPeriodsBetweenACHeavyMaint; }
+    }
+
     public Constants(Dictionary<string, Dictionary<string, object>> lookupSets)
     {        
         _baseDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(lookupSets["general"]["base_date"]);
@@ -265,7 +285,11 @@ public class Constants
         _preserveMaxPdi = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_max_pdi"]);
         _preserveMaxRut = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_max_rut"]);
         _preserveMinSla = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_min_sla"]);
-               
+
+        // Related to MCDA Treatment Triggering
+        _maxSlaForACHeavyMaint = Convert.ToDouble(lookupSets["mcda_treatment_triggering"]["ac_hmaint_maximum_sla"]);
+        _minPeriodsBetweenACHeavyMaint = Convert.ToInt32(lookupSets["mcda_treatment_triggering"]["ac_hmaint_min_periods_between"]);
+                
     }
 
 

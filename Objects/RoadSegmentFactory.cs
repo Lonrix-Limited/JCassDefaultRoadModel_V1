@@ -56,14 +56,11 @@ public static class RoadSegmentFactory
         segment.OnfStreetCategory = model.GetRawData_Text(rawRow, "file_onf_street_category").ToLower();
         segment.OnfMovementRank = model.GetRawData_Text(rawRow, "file_onf_movement_rank").ToLower();
         segment.OnfFreight = model.GetRawData_Text(rawRow, "file_onf_freight").ToLower();
-        segment.RoadUse = model.GetRawData_Text(rawRow, "file_road_use").ToLower();
-
+        
         //Lookup Road Class based on ONRC value (do NOTnuse file_road_class as this contains client-variant values)
         segment.RoadClass = model.GetLookupValueText("road_class", segment.ONRC);
 
-        // Traffic
-        segment.NumberOfLanes = model.GetRawData_Number(rawRow, "file_no_of_lanes");
-        segment.PavementUse = model.GetRawData_Number(rawRow, "file_pave_use");
+        // Traffic        
         segment.AverageDailyTraffic = model.GetRawData_Number(rawRow, "file_adt");
         segment.HeavyVehiclePercentage = model.GetRawData_Number(rawRow, "file_heavy_perc");
         segment.NumberOfBusRoutes = model.GetRawData_Number(rawRow, "file_no_of_bus_routes");
@@ -158,14 +155,11 @@ public static class RoadSegmentFactory
         segment.OnfStreetCategory = Convert.ToString(inputAndParameterValues["file_onf_street_category"]).ToLower();
         segment.OnfMovementRank = Convert.ToString(inputAndParameterValues["file_onf_movement_rank"]).ToLower();
         segment.OnfFreight = Convert.ToString(inputAndParameterValues["file_onf_freight"]).ToLower();
-        segment.RoadUse = Convert.ToString(inputAndParameterValues["file_road_use"]).ToLower();
-
+        
         //Lookup Road Class based on ONRC value (do NOTnuse file_road_class as this contains client-variant values)
         segment.RoadClass = frameworkModel.GetLookupValueText("road_class", segment.ONRC);
 
-        // Traffic
-        segment.NumberOfLanes = Convert.ToDouble(inputAndParameterValues["file_no_of_lanes"]);
-        segment.PavementUse = Convert.ToDouble(inputAndParameterValues["file_pave_use"]);        
+        // Traffic                
         segment.HeavyVehiclePercentage = Convert.ToDouble(inputAndParameterValues["file_heavy_perc"]);
         segment.NumberOfBusRoutes = Convert.ToDouble(inputAndParameterValues["file_no_of_bus_routes"]);
         segment.TrafficGrowthPercent = Convert.ToDouble(inputAndParameterValues["file_traff_growth_perc"]);

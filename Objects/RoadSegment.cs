@@ -434,11 +434,7 @@ public class RoadSegment
         set => _onfFreight = value?.ToLower();
     }
 
-    /// <summary>
-    /// Road use descriptor (not in use).
-    /// </summary>
-    public string RoadUse { get; set; }
-
+    
     /// <summary>
     /// Road class based on ONRC value mapped to a Road Class in lookup set 'road_class'. Note: this does NOT
     /// map to the input column "file_road_class" as that column contains client-variant values.
@@ -449,16 +445,7 @@ public class RoadSegment
         set => _roadClass = value?.ToLower();
     }
 
-    /// <summary>
-    /// Number of lanes (not in use).
-    /// </summary>
-    public double NumberOfLanes { get; set; }
-
-    /// <summary>
-    /// Pavement use code (not in use).
-    /// </summary>
-    public double PavementUse { get; set; }
-
+    
     /// <summary>
     /// Combined road type based on Urban/Rural and Road Class. This is simply a concatenation of the two
     /// values, so it will return e.g. 'RL' for Rural, Low Volume, or 'UL' for Urban, Low Volume.
