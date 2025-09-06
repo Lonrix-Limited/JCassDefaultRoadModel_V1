@@ -26,8 +26,7 @@ public class Constants
 
     // Related to Candidate Selection
     private double _minSlaToTreatAc;
-    private double _minSlaToTreatCs;
-    private double _minSurfAge;
+    private double _minSlaToTreatCs;    
     private double _min_periods_to_next_treat;
     private double _min_sdi_to_treat;
     private double _min_pdi_to_treat;
@@ -46,8 +45,13 @@ public class Constants
     private double _holdingPdiRankPt2;
     private double _holdingPdiRankPt3;
     private double _holdingMaxRut;
+
     private double _preserveSdiRank;
-    private double _preserveMaxPdi;
+
+    private double _preserveMaxPdiChipSeal;
+    private double _preserveMaxPdiAC;
+    private double _holdingMaxPdiAC;
+
     private double _preserveMaxRut;    
     private double _preserveMinSla;           
 
@@ -111,15 +115,7 @@ public class Constants
     {
         get { return _min_pdi_to_treat; }
     }
-
-    /// <summary>
-    /// Minimum surface age to consider ANY treatment except second coats.
-    /// </summary>
-    public double CSMinSurfAge
-    {
-        get { return _minSurfAge; }
-    }
-
+    
     #endregion
 
     /// <summary>
@@ -212,14 +208,29 @@ public class Constants
     {
         get { return _preserveSdiRank; }
     }
-
-    
+        
     /// <summary>
-    /// Do not consider preservation if PDI is above this value 
+    /// Do not consider Preservation ChipSeal treatment if PDI is above this value 
     /// </summary>
-    public double TSSPreserveMaxPdi
+    public double TSSPreserveMaxPdiChipseal
     {
-        get { return _preserveMaxPdi; }
+        get { return _preserveMaxPdiChipSeal; }
+    }
+
+    /// <summary>
+    /// Do not consider Preservation AC treatment if PDI is above this value 
+    /// </summary>
+    public double TSSPreserveMaxPdiAC
+    {
+        get { return _preserveMaxPdiAC; }
+    }
+
+    /// <summary>
+    /// Do not consider Holding AC treatment if PDI is above this value 
+    /// </summary>
+    public double TSSHoldingMaxPdiAC
+    {
+        get { return _holdingMaxPdiAC; }
     }
 
     /// <summary>
@@ -265,9 +276,7 @@ public class Constants
         _min_pdi_to_treat = Convert.ToDouble(lookupSets["candidate_selection"]["min_pdi_to_treat"]);
         _minSlaToTreatAc = Convert.ToDouble(lookupSets["candidate_selection"]["min_sla_to_treat_ac"]);
         _minSlaToTreatCs = Convert.ToDouble(lookupSets["candidate_selection"]["min_sla_to_treat_cs"]);
-        _minSurfAge = Convert.ToDouble(lookupSets["candidate_selection"]["min_surf_age"]);
         
-
         _potholeBoostFactor = Convert.ToDouble(lookupSets["distress"]["poth_booster"]);
 
         _maintenanceCostCalibrationFactor = Convert.ToDouble(lookupSets["maint_pred"]["cal_maint_pred"]);
@@ -282,7 +291,11 @@ public class Constants
         _holdingPdiRankPt3 = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["holding_pdi_rank_pt3"]);
         _holdingMaxRut = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["holding_max_rut"]);
         _preserveSdiRank = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_sdi_rank"]);
-        _preserveMaxPdi = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_max_pdi"]);
+        
+        _preserveMaxPdiChipSeal = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_max_pdi_chipseal"]);
+        _preserveMaxPdiAC = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_max_pdi_ac"]);
+        _holdingMaxPdiAC = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["holding_max_pdi_ac"]);
+
         _preserveMaxRut = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_max_rut"]);
         _preserveMinSla = Convert.ToDouble(lookupSets["treatment_suitability_scores"]["preserve_min_sla"]);
 

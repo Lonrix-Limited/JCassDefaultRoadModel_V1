@@ -136,7 +136,7 @@ public class Initialiser
     /// Get the initial rutting value, taking into account the HSD survey age and the Surfacing and Pavement ages. There are
     /// three possibilities:
     /// <para>1. The HSD survey is older than the Pavement Age: In this case we presume the segment has been rehabilitated
-    /// after the survey and return the value in lookup set 'rehab_resets_rut' mapping to the segment's RoadType</para>
+    /// after the survey and return the value in lookup set 'rehab_resets_rut'</para>
     /// <para>2. The HSD survey is not older than the Pavement Age but older than Surface Age: In this case we presume the 
     /// segment has been resurfaced after the survey and calculate the resetted value based on how much the raw rutting value 
     /// (calculated as the maximum of the LWP and RWP 85th percentile rut values) exceeds the reset exceedance threshold, and 
@@ -154,7 +154,7 @@ public class Initialiser
         // If segment has been rehabilitated, return the lookup value for the rutting reset
         bool hasBeenRehabilitated = segment.PavementAge < surveyAge;
         if (hasBeenRehabilitated) {
-            return _domainModel.GetLookupValueNumber("rehab_resets_rut", segment.SurfaceRoadType);
+            return _domainModel.GetLookupValueNumber("rehab_resets_rut", "all_cats");
         }
 
         double ruttingRaw = Math.Max(segment.RutLwpMean85, segment.RutRwpMean85);
@@ -163,8 +163,8 @@ public class Initialiser
         bool hasBeenResurfaced = segment.SurfaceAge < surveyAge;
         if (hasBeenResurfaced)
         {
-            double resetExceedenceThreshold = _domainModel.GetLookupValueNumber("reset_exceed_thresh_rut", segment.SurfaceRoadType);
-            double resetImprovementFactor = _domainModel.GetLookupValueNumber("reset_perc_improv_facts_rut", segment.SurfaceRoadType);
+            double resetExceedenceThreshold = _domainModel.GetLookupValueNumber("reset_exceed_thresh_rut", "preserve");
+            double resetImprovementFactor = _domainModel.GetLookupValueNumber("reset_perc_improv_facts_rut", "preserve");
 
             double resetValue = CalculationUtilities.GetResetBasedOnExceedanceConcept(ruttingRaw, resetExceedenceThreshold, resetImprovementFactor);
             return resetValue;

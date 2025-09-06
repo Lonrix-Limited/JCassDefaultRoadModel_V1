@@ -1066,7 +1066,8 @@ public class RoadSegment
     /// </summary>    
     private double GetObjectiveRutting(ModelBase frameworkModel, RoadNetworkModel domainModel)
     {
-        double rutExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", this.SurfaceRoadType);
+        //TODO: This does not distinguish between preserve and holding like MCDA does. Can be fixed.
+        double rutExceedanceThreshold = frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", "preserve");
         double objRutPre1 = this.RutParameterValue - rutExceedanceThreshold;
         //0.55 * post_obj_rutting_pre1 + -1.65
         double objRutPre = 0.55 * objRutPre1 - 1.65;

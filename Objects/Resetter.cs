@@ -37,7 +37,7 @@ public class Resetter
         string treatmentCategory = _frameworkModel.TreatmentTypes[treatment.TreatmentName].Category;
         string treatmentName = treatment.TreatmentName.ToLower();
         bool isRehab = treatmentName.StartsWith("rehab");
-        bool isPreseal = treatmentName.StartsWith("preseal") || treatmentName == "ac_hmaint";
+        bool isPreseal = treatmentName.StartsWith("heavymaint");
 
         // Reset (or increment where not applicable) all properties related to model parameters
         // Keep the code same order as the model parameter list
@@ -112,7 +112,7 @@ public class Resetter
         segment.PctPotholes = _domainModel.PotholeModel.GetValueAfterReset(segment, segment.PctPotholes, treatmentCategory);
         segment.PotholeModelInfo = _domainModel.PotholeModel.GetResettedSetupValues(segment, potholesPrevious, treatmentCategory, segment.PotholeModelInfo);
 
-        segment.RutParameterValue = this.GetResetttedRut(segment, isRehab);
+        segment.RutParameterValue = this.GetResetttedRut(segment, treatmentCategory);
         segment.RutIncrement = segment.GetRutIncrementAfterTreatment();
         
         segment.Naasra85 = this.GetResetttedNaasra(segment, isRehab);
@@ -170,8 +170,8 @@ public class Resetter
         }        
     }
     
-    private double GetResetttedRut(RoadSegment segment, bool isRehab)
-    {
+    private double GetResetttedRut(RoadSegment segment, string treatmnentCatAnyCase)
+    {        
         if (segment.SurfaceIsChipSealOrACFlag == 0)
         {
             return segment.RutParameterValue; // Rut remains constant for non ChipSeal or AC surfaces
@@ -182,17 +182,28 @@ public class Resetter
             return segment.RutParameterValue; // This indicates preseal has just been applied, so no reset
         }
 
-        if (isRehab)
+        string treatmentCategory = treatmnentCatAnyCase.ToLower();
+        
+        if (treatmentCategory.Contains("rehab"))
         {
-            return _frameworkModel.GetLookupValueNumber("rehab_resets_rut", segment.SurfaceRoadType);
+            return _frameworkModel.GetLookupValueNumber("rehab_resets_rut", "all_cats");
+        }
+        else if (treatmentCategory.Contains("holding") || treatmentCategory.Contains("heavymaint"))
+        {
+            double exceedanceThreshold = _frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", "holding_or_repairs");
+            double improvementFactor = _frameworkModel.GetLookupValueNumber("reset_perc_improv_facts_rut", "holding_or_repairs");
+            return CalculationUtilities.GetResetBasedOnExceedanceConcept(segment.RutParameterValue, exceedanceThreshold, improvementFactor);
+        }
+        else if (treatmentCategory.Contains("preserve"))
+        {
+            double exceedanceThreshold = _frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", "preserve");
+            double improvementFactor = _frameworkModel.GetLookupValueNumber("reset_perc_improv_facts_rut", "preserve");
+            return CalculationUtilities.GetResetBasedOnExceedanceConcept(segment.RutParameterValue, exceedanceThreshold, improvementFactor);
         }
         else
         {
-            double exceedanceThreshold = _frameworkModel.GetLookupValueNumber("reset_exceed_thresh_rut", segment.SurfaceRoadType);
-            double improvementFactor = _frameworkModel.GetLookupValueNumber("reset_perc_improv_facts_rut", segment.SurfaceRoadType);
-            return CalculationUtilities.GetResetBasedOnExceedanceConcept(segment.RutParameterValue, exceedanceThreshold, improvementFactor);
+            throw new ArgumentException($"Treatment category '{treatmentCategory}' not handled in generic reset for S-Curve parameters");
         }
-            
 
     }
 

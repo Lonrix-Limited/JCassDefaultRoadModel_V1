@@ -50,12 +50,8 @@ public static class CandidateSelector
             {
                 return new CandidateSelectionResult(false, $"Next treatment in {periodsToNextTreatment} periods: too soon");
             }
-                        
-            // Is the specified minimum surface age reached?
-            if (segment.SurfaceAge < domainModel.Constants.CSMinSurfAge)
-            {
-                return new CandidateSelectionResult(false, $"Surface Age = {Math.Round(segment.SurfaceAge, 2)}: below threshold ({domainModel.Constants.CSMinSurfAge})");
-            }
+
+            // Note: check on minimum surface age removed because it is redundant with the SLA check below
 
             // Is the specified minimum Surface Life Achieved (SLA) reached?
             if (segment.SurfaceClass == "ac" && segment.SurfaceAchievedLifePercent < domainModel.Constants.CSMinSlaToTreatAc)

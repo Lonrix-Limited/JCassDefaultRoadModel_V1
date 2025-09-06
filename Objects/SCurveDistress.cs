@@ -134,12 +134,12 @@ public abstract class SCurveDistress
 
             double fact1or1 = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["reset_resurf_thresh1"]);
             double fact1or2 = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["reset_resurf_thresh2"]);
-            string setupCode = $"{fact1or1},1|{fact1or2},0";
+            string setupCode = $"{fact1or1},0|{fact1or2},1";
             _resetPenaltyCurveForResurfacing = new PieceWiseLinearModelGeneric(setupCode, false);
 
             fact1or1 = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["reset_holding_thresh1"]);
             fact1or2 = Convert.ToDouble(_frameworkModel.Lookups[distressLookupSetCode]["reset_holding_thresh2"]);
-            setupCode = $"{fact1or1},1|{fact1or2},0";
+            setupCode = $"{fact1or1},0|{fact1or2},1";
             _resetPenaltyCurveForHoldingAction = new PieceWiseLinearModelGeneric(setupCode, false);
         }
         catch (Exception ex)
@@ -308,23 +308,35 @@ public abstract class SCurveDistress
         string resetCode = "";
         if (treatmentCategory.Contains("rehab"))
         {
+            // If treatment is a Rehab, then the S-curve parameters are fully reset, meaning we use the expected values
+            // as calculated based on surface expected life and distress probability
             resetCode = $"{Math.Round(aadiExpected,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(resetT100,2)}";
         }
-        else if (treatmentCategory.Contains("holding"))
+        else if (treatmentCategory.Contains("holding") || treatmentCategory.Contains("heavymaint"))
         {
+            // If the treatment is a holding action, then we apply a penalty factor to the expected AADI and T100 values
+            // Penalty factor is based on the distress value before the holding action, which is mapped to a factor between 0 and 1
+            // using a piecewise linear function using interpolation between lookup values 'reset_holding_thresh1' and 'reset_holding_thresh2'
             double resetPenaltyFactorHolding = _resetPenaltyCurveForHoldingAction.GetValue(currentValue);
-            double aadiForHolding = Math.Clamp(aadiExpected * resetPenaltyFactorHolding, _AADIMin, _AADIMax);
-            double t100ForHolding = Math.Clamp(resetT100 * resetPenaltyFactorHolding, _T100Min, _T100Max);
+            double adjusmentFactor = 1 - resetPenaltyFactorHolding;
+            double aadiForHolding = Math.Clamp(aadiExpected * adjusmentFactor, _AADIMin, _AADIMax);
+            double t100ForHolding = Math.Clamp(resetT100 * adjusmentFactor, _T100Min, _T100Max);
             resetCode = $"{Math.Round(aadiForHolding,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(t100ForHolding, 2)}";
+        }
+        else if (treatmentCategory.Contains("preserve"))
+        {
+            //For Resurfacing, we apply a penalty factor to the expected AADI and T100 values
+            // Same as for holding action, but using a different piecewise linear function using interpolation between
+            // lookup values 'reset_resurf_thresh1' and 'reset_resurf_thresh2'
+            double resetPenaltyFactorResurf = _resetPenaltyCurveForResurfacing.GetValue(currentValue);
+            double adjusmentFactor = 1 - resetPenaltyFactorResurf;
+            double aadiResurfacing = Math.Clamp(aadiExpected * adjusmentFactor, _AADIMin, _AADIMax);
+            double t100Resurfacing = Math.Clamp(resetT100 * adjusmentFactor, _T100Min, _T100Max);
+            resetCode = $"{Math.Round(aadiResurfacing, 2)}_{Math.Round(_InitValExpected, 2)}_{Math.Round(t100Resurfacing, 2)}";
         }
         else
         {
-            //Assume Resurfacing
-
-            double resetPenaltyFactorResurf = _resetPenaltyCurveForResurfacing.GetValue(currentValue);            
-            double aadiResurfacing = Math.Clamp(aadiExpected * resetPenaltyFactorResurf,_AADIMin, _AADIMax);
-            double t100Resurfacing = Math.Clamp(resetT100 * resetPenaltyFactorResurf, _T100Min, _T100Max);
-            resetCode = $"{Math.Round(aadiResurfacing,2)}_{Math.Round(_InitValExpected,2)}_{Math.Round(t100Resurfacing,2)}";
+            throw new ArgumentException($"Treatment category '{treatmentCategory}' not handled in generic reset for S-Curve parameters");
         }
 
         return resetCode;
@@ -427,7 +439,8 @@ public class FlushingModel : SCurveDistress
     public override string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory, string previousSetupCode)
     {
         // If the treatment is a second coat over a holding action, we assume the distress has been reset and the S-curve parameters
-        // reset at the time of the holing action still apply. Thus we return the previous setup code.
+        // reset at the time of the holing action still apply. Thus we return the previous setup code. Note we have to use SurfaceFunctionPrevious
+        // because the current Surface Function will already have been updated from '1a' to whatever by the time this method is called.
         if (segment.SurfaceFunction == "1a") { return previousSetupCode; }
 
         treatmentCategory = treatmentCategory.ToLower();
@@ -476,7 +489,8 @@ public class EdgeBreakModel : SCurveDistress
     public override string GetResettedSetupValues(RoadSegment segment, double currentValue, string treatmentCategory, string previousSetupCode)
     {
         // If the treatment is a second coat over a holding action, we assume the distress has been reset and the S-curve parameters
-        // reset at the time of the holing action still apply. Thus we return the previous setup code.
+        // reset at the time of the holing action still apply. Thus we return the previous setup code. Note we have to use SurfaceFunctionPrevious
+        // because the current Surface Function will already have been updated from '1a' to whatever by the time this method is called.
         if (segment.SurfaceFunction == "1a") { return previousSetupCode; }
 
         treatmentCategory = treatmentCategory.ToLower();

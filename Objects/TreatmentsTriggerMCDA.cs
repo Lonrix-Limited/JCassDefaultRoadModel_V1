@@ -62,9 +62,10 @@ public class TreatmentsTriggerMCDA
         //---------------------------------------------------------------------------------------------------------------------------------
 
         this.AddPreservationChipsealIfValid(segment, period, triggeredTreatments);        
-        this.AddPresealOnChipsealfValid(segment, period, triggeredTreatments);
+        this.AddPresealOnChipsealIfValid(segment, period, triggeredTreatments);
 
         this.AddPreservationThinACIfValid(segment, period, triggeredTreatments);
+        this.AddHoldingThinACIfValid(segment, period, triggeredTreatments);
         this.AddAcHeavyMaintenanceIfValid(segment, period, triggeredTreatments, infoFromModel);
 
         this.AddRehabilitationIfValid(segment, period, triggeredTreatments);
@@ -209,7 +210,7 @@ public class TreatmentsTriggerMCDA
         if (segment.SecondCoatNeeded)
         {
             double quantity = segment.AreaSquareMetre;
-            TreatmentInstance treatment = new TreatmentInstance(segment.ElementIndex, "SecondCoat", iPeriod, quantity, true, "Second coat", "Second coat");
+            TreatmentInstance treatment = new TreatmentInstance(segment.ElementIndex, "Chipseal_S", iPeriod, quantity, true, "Second coat", "Second coat");
             treatment.TreatmentSuitabilityScore = 102; // Set a high suitability score for second coat treatments
             treatments.Add(treatment);
         }
@@ -227,7 +228,7 @@ public class TreatmentsTriggerMCDA
         if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;
 
         // For preservation, if PDI is above the maximum threshold, do not add a treatment
-        if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdi) return;
+        if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdiChipseal) return;
 
         double tssScore = TreatmentSuitabilityScorer.GetTSSForPreservationTreatment(segment, _domainModel, iPeriod);
         if (tssScore <= _frameworkModel.Configuration.MinimumTreatmentSuitabilityScoreAllowed) return; // If the TSS score is below the minimum allowed, do not add a treatment
@@ -254,7 +255,36 @@ public class TreatmentsTriggerMCDA
         if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;
 
         // For preservation, if PDI is above the maximum threshold, do not add a treatment
-        if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdi) return;
+        if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdiAC) return;
+
+        double tssScore = TreatmentSuitabilityScorer.GetTSSForPreservationTreatment(segment, _domainModel, iPeriod);
+        if (tssScore <= _frameworkModel.Configuration.MinimumTreatmentSuitabilityScoreAllowed) return; // If the TSS score is below the minimum allowed, do not add a treatment
+
+        double sdi = segment.SurfaceDistressIndex;
+        string reason = $"SLA={Math.Round(segment.SurfaceAchievedLifePercent, 1)}";
+        string comment = $"SDI={Math.Round(sdi, 1)}, TSS={Math.Round(tssScore, 2)}";
+        
+        double overlayQuantity = segment.AreaSquareMetre;                        
+                                       
+        TreatmentInstance treatment = new TreatmentInstance(segment.ElementIndex, treatmentName, iPeriod, overlayQuantity, false, reason, comment);
+        
+        treatment.TreatmentSuitabilityScore = tssScore;
+        treatments.Add(treatment);
+    }
+
+    private void AddHoldingThinACIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
+    {
+        string treatmentName = "ThinAC_H";
+        if (segment.NextSurfaceIsChipSeal == true) return;
+
+        // If the rut depth is above the maximum threshold, do not add a treatment
+        if (segment.RutParameterValue > _domainModel.Constants.TSSPreserveMaxRut) return;
+
+        // If the surface life achieved is not greater than the minimum required, do not add a treatment
+        if (segment.SurfaceAchievedLifePercent < _domainModel.Constants.TSSPreserveMinSla) return;
+
+        // For preservation, if PDI is above the maximum threshold, do not add a treatment
+        if (segment.PavementDistressIndex > _domainModel.Constants.TSSHoldingMaxPdiAC) return;
 
         double tssScore = TreatmentSuitabilityScorer.GetTSSForPreservationTreatment(segment, _domainModel, iPeriod);
         if (tssScore <= _frameworkModel.Configuration.MinimumTreatmentSuitabilityScoreAllowed) return; // If the TSS score is below the minimum allowed, do not add a treatment
@@ -267,8 +297,8 @@ public class TreatmentsTriggerMCDA
 
         double overlayQuantity = quantity;
         double repairQuantity = quantity * Math.Min(100, segment.PavementDistressIndex) / 100;
-        double acOverlayUnitRate = _frameworkModel.TreatmentTypes["ThinAC"].UnitRate;
-        double acRepairUnitRate = _frameworkModel.TreatmentTypes["AC_HMaint"].UnitRate;
+        double acOverlayUnitRate = _frameworkModel.TreatmentTypes["ThinAC_P"].UnitRate;
+        double acRepairUnitRate = _frameworkModel.TreatmentTypes["HMaint_AC"].UnitRate;
 
         double overlayCost = overlayQuantity * acOverlayUnitRate;
         double repairCost = repairQuantity * acRepairUnitRate;
@@ -278,7 +308,7 @@ public class TreatmentsTriggerMCDA
         double dummyArea = totalCost; // Dummy area which is effectively the cost
 
         // Check to ensure that the dummy rate for the combined treatment is 1.0
-        double dummyUnitRate = _frameworkModel.TreatmentTypes["ThinAC_P"].UnitRate;
+        double dummyUnitRate = _frameworkModel.TreatmentTypes["ThinAC_H"].UnitRate;
         if (dummyUnitRate != 1.0)
         {
             throw new InvalidOperationException($"Dummy unit rate for ThinAC treatment which combined overlay and repairs should be 1.0, but it is {dummyUnitRate}");
@@ -292,7 +322,7 @@ public class TreatmentsTriggerMCDA
         Dictionary<string, decimal> treatmentFractions = new Dictionary<string, decimal>
         {
             { "Resurfacing", overlayFraction },
-            { "Preseals", repairFraction }
+            { "Pre-Repairs", repairFraction }
         };
         treatment.AssignBudgetCategoryFractions(treatmentFractions);
 
@@ -328,14 +358,14 @@ public class TreatmentsTriggerMCDA
         presealAreaFraction = Convert.ToDouble(presealAreaFractionLookup.Evaluate(paramVals));
         if (presealAreaFraction <= 0.0) return; // If preseal area fraction is zero or negative, do not add a treatment
 
-        TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "AC_HMaint", presealAreaFraction);
+        TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "HMaint_AC", presealAreaFraction);
         if (treatment is not null)
         {
             treatments.Add(treatment);
         }
     }
 
-    private void AddPresealOnChipsealfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
+    private void AddPresealOnChipsealIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
     {
         double presealAreaFraction = 0.0; // Default value
 
@@ -351,7 +381,7 @@ public class TreatmentsTriggerMCDA
         presealAreaFraction = Convert.ToDouble(presealAreaFractionLookup.Evaluate(paramVals));
         if (presealAreaFraction <= 0.0) return; // If preseal area fraction is zero or negative, do not add a treatment
         
-        TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "Preseal_CS", presealAreaFraction);
+        TreatmentInstance treatment = this.GetPresealTreatment(segment, iPeriod, "PreSeal", presealAreaFraction);
         if (treatment is not null) treatments.Add(treatment);
 
     }
