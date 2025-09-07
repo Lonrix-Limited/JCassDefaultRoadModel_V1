@@ -27,7 +27,8 @@ public record CandidateSelectionResult(bool IsValidCandidate, string reason)
 public static class CandidateSelector
 {
 
-    public static CandidateSelectionResult EvaluateCandidate(RoadSegment segment, ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod, int periodsToNextTreatment)
+    public static CandidateSelectionResult EvaluateCandidate(RoadSegment segment, ModelBase frameworkModel, 
+        RoadNetworkModel domainModel, int currentPeriod, int periodsToNextTreatment)
     {
 		try
 		{
@@ -53,21 +54,25 @@ public static class CandidateSelector
 
             // Note: check on minimum surface age removed because it is redundant with the SLA check below
 
-            // Is the specified minimum Surface Life Achieved (SLA) reached?
+            // Is the specified minimum Surface Life Achieved (SLA) reached? 
+            // Check for Asphalt and Chip Seal surfaces separately, as they have different thresholds
             if (segment.SurfaceClass == "ac" && segment.SurfaceAchievedLifePercent < domainModel.Constants.CSMinSlaToTreatAc)
             {
-                return new CandidateSelectionResult(false, $"SLA = {Math.Round(segment.SurfaceAchievedLifePercent, 2)}: below threshold ({domainModel.Constants.CSMinSlaToTreatAc})");
+                return new CandidateSelectionResult(false, 
+                    $"SLA = {Math.Round(segment.SurfaceAchievedLifePercent, 2)}: below threshold ({domainModel.Constants.CSMinSlaToTreatAc})");
             }
 
             if (segment.SurfaceClass == "cs" && segment.SurfaceAchievedLifePercent < domainModel.Constants.CSMinSlaToTreatCs)
             {
-                return new CandidateSelectionResult(false, $"SLA = {Math.Round(segment.SurfaceAchievedLifePercent, 2)}: below threshold ({domainModel.Constants.CSMinSlaToTreatCs})");
+                return new CandidateSelectionResult(false, 
+                    $"SLA = {Math.Round(segment.SurfaceAchievedLifePercent, 2)}: below threshold ({domainModel.Constants.CSMinSlaToTreatCs})");
             }
 
             // Finally, check if the segment meets the minimum distress indices for treatment
             if (segment.SurfaceDistressIndex < domainModel.Constants.CSMinSDIToTreat && segment.PavementDistressIndex < domainModel.Constants.CSMinPDIToTreat)
             {
-                return new CandidateSelectionResult(false, $"SDI = {Math.Round(segment.SurfaceDistressIndex, 2)}, PDI = {Math.Round(segment.PavementDistressIndex, 2)}: below thresholds ({domainModel.Constants.CSMinSDIToTreat}, {domainModel.Constants.CSMinPDIToTreat})");
+                return new CandidateSelectionResult(false,
+                    $"SDI = {Math.Round(segment.SurfaceDistressIndex, 2)}, PDI = {Math.Round(segment.PavementDistressIndex, 2)}: below thresholds ({domainModel.Constants.CSMinSDIToTreat}, {domainModel.Constants.CSMinPDIToTreat})");
             }
 
             return new CandidateSelectionResult(true, "OK. Passed CSA Checks");        
