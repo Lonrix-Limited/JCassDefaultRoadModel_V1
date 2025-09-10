@@ -109,9 +109,9 @@ public class Initialiser
         }
     }
 
-    private double GetHighSpeedSurveyAge(RoadSegment segment)
+    private double GetRutSurveyAge(RoadSegment segment)
     {
-        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.HsdSurveyDateString);
+        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.RutSurveyDateString);
         double age = (_domainModel.Constants.BaseDate - surveyDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
         if (age < 0)
         {
@@ -149,7 +149,7 @@ public class Initialiser
     /// <returns></returns>
     private double GetInitialRuttingValue(RoadSegment segment)
     {
-        double surveyAge = GetHighSpeedSurveyAge(segment);
+        double surveyAge = GetRutSurveyAge(segment);
 
         // If segment has been rehabilitated, return the lookup value for the rutting reset
         bool hasBeenRehabilitated = segment.PavementAge < surveyAge;

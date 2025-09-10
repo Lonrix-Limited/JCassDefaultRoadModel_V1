@@ -107,11 +107,7 @@ public class RoadSegment
 
     #region Situational and Treatment Flags
 
-    /// <summary>
-    /// Indicates if the segment is a roundabout (not in use).
-    /// </summary>
-    public bool IsRoundaboutFlag { get; set; }
-
+    
     /// <summary>
     /// Can this segment be considered for treatment (client specific based on policy).
     /// </summary>
@@ -311,11 +307,7 @@ public class RoadSegment
     /// </summary>
     public double SurfaceThickness { get; set; }
 
-    /// <summary>
-    /// Pavement type (not in use).
-    /// </summary>
-    public string PavementType { get; set; }
-
+    
     /// <summary>
     /// Pavement construction date as a text/string value in dd/mm/yyyy format.
     /// </summary>
@@ -373,11 +365,7 @@ public class RoadSegment
     #region ONRC and Carriageway Attributes
 
     private string _urbanRural;
-    private string _onrc;
-    private string _NztaHierarchy;
-    private string _onfStreetCategory;
-    private string _onfMovementRank;
-    private string _onfFreight;
+    private string _onrc;    
     private string _roadClass;
 
     /// <summary>
@@ -397,47 +385,10 @@ public class RoadSegment
         get => _onrc;
         set => _onrc = value?.ToLower();
     }
-
-    /// <summary>
-    /// NZTA Hierarchy (not in use).
-    /// </summary>
-    public string NztaHierarchy
-    {
-        get => _NztaHierarchy;
-        set => _NztaHierarchy = value?.ToLower();
-    }
-
-    /// <summary>
-    /// ONF Street Category (not in use).
-    /// </summary>
-    public string OnfStreetCategory
-    {
-        get => _onfStreetCategory;
-        set => _onfStreetCategory = value?.ToLower();
-    }
-
-    /// <summary>
-    /// ONF Movement Rank (not in use).
-    /// </summary>
-    public string OnfMovementRank
-    {
-        get => _onfMovementRank;
-        set => _onfMovementRank = value?.ToLower();
-    }
-
-    /// <summary>
-    /// ONF Freight (not in use).
-    /// </summary>
-    public string OnfFreight
-    {
-        get => _onfFreight;
-        set => _onfFreight = value?.ToLower();
-    }
-
-    
+        
     /// <summary>
     /// Road class based on ONRC value mapped to a Road Class in lookup set 'road_class'. Note: this does NOT
-    /// map to the input column "file_road_class" as that column contains client-variant values.
+    /// map to the (now deprecated) input column "file_road_class" as that column contains client-variant values.
     /// </summary>
     public string RoadClass
     {
@@ -579,7 +530,7 @@ public class RoadSegment
     /// HSD survey date as a string in dd/mm/yyyy format. Do not use this
     /// after initialitation - use the RutParameterValue property instead.
     /// </summary>
-    public string HsdSurveyDateString { get; set; }
+    public string RutSurveyDateString { get; set; }
 
     /// <summary>
     /// Roughness segment survey date as string in dd/mm/yyyy format.

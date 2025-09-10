@@ -42,8 +42,7 @@ public static class RoadSegmentFactory
         segment.AreaSquareMetre = model.GetRawData_Number(rawRow, "file_area_m2");
         segment.WidthInMetre = segment.AreaSquareMetre / segment.LengthInMetre;
 
-        // Flags
-        segment.IsRoundaboutFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_is_roundabout_flag"));
+        // Flags        
         segment.CanTreatFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_can_treat_flag"));
         segment.CanRehabFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_can_rehab_flag"));
         segment.AsphaltOkFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_ac_ok_flag"));
@@ -52,10 +51,7 @@ public static class RoadSegmentFactory
         // Classification
         segment.UrbanRural = model.GetRawData_Text(rawRow, "file_urban_rural").ToLower();
         segment.ONRC = model.GetRawData_Text(rawRow, "file_onrc").ToLower();
-        segment.NztaHierarchy = model.GetRawData_Text(rawRow, "file_nzta_hierarchy").ToLower();
-        segment.OnfStreetCategory = model.GetRawData_Text(rawRow, "file_onf_street_category").ToLower();
-        segment.OnfMovementRank = model.GetRawData_Text(rawRow, "file_onf_movement_rank").ToLower();
-        segment.OnfFreight = model.GetRawData_Text(rawRow, "file_onf_freight").ToLower();
+        
         
         //Lookup Road Class based on ONRC value (do NOTnuse file_road_class as this contains client-variant values)
         segment.RoadClass = model.GetLookupValueText("road_class", segment.ONRC);
@@ -76,17 +72,16 @@ public static class RoadSegmentFactory
         segment.SurfaceNumberOfLayers = model.GetRawData_Number(rawRow, "file_surf_layer_no");
         segment.SurfaceThickness = model.GetRawData_Number(rawRow, "file_surf_thick");
 
-        // Pavement
-        segment.PavementType = model.GetRawData_Text(rawRow, "file_pave_type");
+        // Pavement        
         segment.PavementDateString = model.GetRawData_Text(rawRow, "file_pave_date");
         segment.PavementRemainingLife = model.GetRawData_Number(rawRow, "file_pave_remlife");
         segment.FaultsAndMaintenanceSurfacingM2 = model.GetRawData_Number(rawRow, "file_su_fault_qty");
         segment.FaultsAndMaintenancePavementM2 = model.GetRawData_Number(rawRow, "file_pa_fault_qty");
 
         // Roughness and rutting
-        segment.RoughnessSurveyDateString = model.GetRawData_Text(rawRow, "file_roughsegment_date");
+        segment.RoughnessSurveyDateString = model.GetRawData_Text(rawRow, "file_rough_survey_date");
         segment.Naasra85 = model.GetRawData_Number(rawRow, "file_naasra_85");
-        segment.HsdSurveyDateString = model.GetRawData_Text(rawRow, "file_hsd_date");
+        segment.RutSurveyDateString = model.GetRawData_Text(rawRow, "file_rut_survey_date");
         segment.RutLwpMean85 = model.GetRawData_Number(rawRow, "file_rut_lwpmean_85");
         segment.RutRwpMean85 = model.GetRawData_Number(rawRow, "file_rut_rwpmean_85");
 
@@ -136,8 +131,7 @@ public static class RoadSegmentFactory
         segment.AreaSquareMetre = Convert.ToDouble(inputAndParameterValues["file_area_m2"]);
         segment.WidthInMetre = segment.AreaSquareMetre / segment.LengthInMetre;
 
-        // Flags
-        segment.IsRoundaboutFlag = Convert.ToBoolean(inputAndParameterValues["file_is_roundabout_flag"]);
+        // Flags        
         segment.CanTreatFlag = Convert.ToBoolean(inputAndParameterValues["file_can_treat_flag"]);
         segment.CanRehabFlag = Convert.ToBoolean(inputAndParameterValues["file_can_rehab_flag"]);        
         segment.AsphaltOkFlag = Convert.ToBoolean(inputAndParameterValues["file_ac_ok_flag"]);
@@ -151,12 +145,8 @@ public static class RoadSegmentFactory
         // Classification
         segment.UrbanRural = Convert.ToString(inputAndParameterValues["file_urban_rural"]).ToLower();
         segment.ONRC = Convert.ToString(inputAndParameterValues["file_onrc"]).ToLower();
-        segment.NztaHierarchy = Convert.ToString(inputAndParameterValues["file_nzta_hierarchy"]).ToLower();
-        segment.OnfStreetCategory = Convert.ToString(inputAndParameterValues["file_onf_street_category"]).ToLower();
-        segment.OnfMovementRank = Convert.ToString(inputAndParameterValues["file_onf_movement_rank"]).ToLower();
-        segment.OnfFreight = Convert.ToString(inputAndParameterValues["file_onf_freight"]).ToLower();
-        
-        //Lookup Road Class based on ONRC value (do NOTnuse file_road_class as this contains client-variant values)
+                
+        //Lookup Road Class based on ONRC value (do NOT use file_road_class as this contains client-variant values)
         segment.RoadClass = frameworkModel.GetLookupValueText("road_class", segment.ONRC);
 
         // Traffic                
@@ -170,16 +160,15 @@ public static class RoadSegmentFactory
         segment.SurfacingDateString = Convert.ToString(inputAndParameterValues["file_surf_date"]);
         
 
-        // Pavement
-        segment.PavementType = Convert.ToString(inputAndParameterValues["file_pave_type"]);
+        // Pavement        
         segment.PavementDateString = Convert.ToString(inputAndParameterValues["file_pave_date"]);
         segment.PavementRemainingLife = Convert.ToDouble(inputAndParameterValues["file_pave_remlife"]);
         segment.FaultsAndMaintenanceSurfacingM2 = Convert.ToDouble(inputAndParameterValues["file_su_fault_qty"]);
         segment.FaultsAndMaintenancePavementM2 = Convert.ToDouble(inputAndParameterValues["file_pa_fault_qty"]);
 
         // Roughness and rutting
-        segment.RoughnessSurveyDateString = Convert.ToString(inputAndParameterValues["file_roughsegment_date"]);        
-        segment.HsdSurveyDateString = Convert.ToString(inputAndParameterValues["file_hsd_date"]);
+        segment.RoughnessSurveyDateString = Convert.ToString(inputAndParameterValues["file_rough_survey_date"]);        
+        segment.RutSurveyDateString = Convert.ToString(inputAndParameterValues["file_rut_survey_date"]);
         segment.RutLwpMean85 = Convert.ToDouble(inputAndParameterValues["file_rut_lwpmean_85"]);  // Original raw rutting value
         segment.RutRwpMean85 = Convert.ToDouble(inputAndParameterValues["file_rut_rwpmean_85"]);  // Original raw rutting value
 
