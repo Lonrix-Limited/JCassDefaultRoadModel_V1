@@ -28,17 +28,18 @@ public class Resetter
 
     public RoadSegment Reset(RoadSegment segment, int period, TreatmentInstance treatment)
     {
-        if (segment.ElementIndex == 92)
-        {
-            int debug = 0; // Debugging breakpoint
-        }
-
+        
         if (treatment is null) return segment;
 
         string treatmentCategory = _frameworkModel.TreatmentTypes[treatment.TreatmentName].Category;
         string treatmentName = treatment.TreatmentName.ToLower();
         bool isRehab = treatmentName.StartsWith("rehab");
-        bool isPreseal = treatmentName.StartsWith("hmaint");
+        bool isPreseal = treatmentName.StartsWith("hmaint") || treatmentName.StartsWith("preseal");
+
+        if (treatmentName == "chipseal_h")
+        {
+            int kk = 9;
+        }
         
         // Reset (or increment where not applicable) all properties related to model parameters
         // Keep the code same order as the model parameter list

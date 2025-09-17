@@ -31,6 +31,11 @@ public class TreatmentsTriggerMCDA
 
     public List<TreatmentInstance> GetTriggeredTreatments(RoadSegment segment, int period, Dictionary<string, object> infoFromModel)
     {
+        if (segment.ElementIndex == 14 && period >= 11)
+        {
+            int kk = 0;
+        }
+
         List<TreatmentInstance> triggeredTreatments = new List<TreatmentInstance>();
 
         // Check if the segment passes the Candidate Selection checks. If not, return an empty list.
