@@ -1,4 +1,5 @@
-﻿using JCass_ModelCore.Models;
+﻿using DocumentFormat.OpenXml.Spreadsheet;
+using JCass_ModelCore.Models;
 using JCass_ModelCore.Treatments;
 using System;
 using System.Collections.Generic;
@@ -37,8 +38,8 @@ public class Resetter
         string treatmentCategory = _frameworkModel.TreatmentTypes[treatment.TreatmentName].Category;
         string treatmentName = treatment.TreatmentName.ToLower();
         bool isRehab = treatmentName.StartsWith("rehab");
-        bool isPreseal = treatmentName.StartsWith("heavymaint");
-
+        bool isPreseal = treatmentName.StartsWith("hmaint");
+        
         // Reset (or increment where not applicable) all properties related to model parameters
         // Keep the code same order as the model parameter list
 
