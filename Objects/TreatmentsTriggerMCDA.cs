@@ -215,7 +215,7 @@ public class TreatmentsTriggerMCDA
         if (segment.SecondCoatNeeded)
         {
             double quantity = segment.AreaSquareMetre;
-            TreatmentInstance treatment = new TreatmentInstance(segment.ElementIndex, "Chipseal_S", iPeriod, quantity, true, "Second coat", "Second coat");
+            TreatmentInstance treatment = new TreatmentInstance(segment.ElementIndex, "ChipSeal_S", iPeriod, quantity, true, "Second coat", "Second coat");
             treatment.TreatmentSuitabilityScore = 102; // Set a high suitability score for second coat treatments
             treatments.Add(treatment);
         }
