@@ -522,6 +522,19 @@ public class RoadSegment
         }
     }
 
+    /// <summary>
+    /// Helper to reset the underlying faults and maintenance values to zero. Use this on itiation if the Surface or Pavement age
+    /// indicates a recent resurfacing or rehabilitation.
+    /// </summary>
+    public void ResetFaultsAndMaintenance()
+    {
+        _faultsAndMaintenanceSurfacingM2 = 0.0;
+        _faultsAndMaintenanceSurfacingPercent = 0.0;
+        _faultsAndMaintenancePavementM2 = 0.0;
+        _faultsAndMaintenancePavementPercent = 0.0;
+    }
+
+
     #endregion
 
     #region High Speed Data (HSD) (Rut, Roughness, Texture etc.)

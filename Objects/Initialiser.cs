@@ -26,6 +26,11 @@ public class Initialiser
     public RoadSegment InitialiseSegment(string[] rawRow, int iElemIndex)
     {
 
+        if (iElemIndex == 8426)
+        {
+            int kk = 9;
+        }
+
         // Create a new RoadSegment object based purely on the raw data provided in the string array.
         RoadSegment segment = RoadSegmentFactory.GetFromRawData(_frameworkModel, rawRow, iElemIndex);
 
@@ -60,8 +65,16 @@ public class Initialiser
         segment.RutIncrement = GetRutIncrementEstimate(segment);
 
         segment.Naasra85 = GetInitialNaasraValue(segment);
-        segment.NaasraIncrement = GetNaasraIncrementEstimate(segment);              
+        segment.NaasraIncrement = GetNaasraIncrementEstimate(segment);
 
+        // When returning from this method, the PDI and SDI values will be automatically calculated based on some of the above values.
+        // However, it may also involve the Mainenance and Faults percentages. So do a heuristic check to see if these values are outdated
+        if (segment.SurfaceAge < 1)
+        {
+            // If surface age is less than 1 year, we assume the maintenance and faults percentage is zero
+            segment.ResetFaultsAndMaintenance();
+        }
+        
         return segment;
     }
         
@@ -185,6 +198,16 @@ public class Initialiser
     /// <returns>The estimated current rut rate, in mm/year</returns>
     private double GetRutIncrementEstimate(RoadSegment segment)
     {
+
+        // If a treatment has been applied, use the post-treatment rut increment
+        // and not the estimate based on surface age
+        double surveyAge = GetRutSurveyAge(segment);
+        bool hasBeenTreated = segment.SurfaceAge < surveyAge;
+        if (hasBeenTreated)
+        {
+            return segment.GetRutIncrementAfterTreatment();
+        }
+
         // Get the estimated "settling-in" rut depth from the lookup table
         double settingInRutDepth = _domainModel.GetLookupValueNumber("settling_in_values", "rut");
 
@@ -252,6 +275,15 @@ public class Initialiser
     /// <returns>The estimated current rut rate, in mm/year</returns>
     private double GetNaasraIncrementEstimate(RoadSegment segment)
     {
+        // If a treatment has been applied, use the post-treatment rut increment
+        // and not the estimate based on surface age
+        double surveyAge = GetRutSurveyAge(segment);
+        bool hasBeenTreated = segment.SurfaceAge < surveyAge;
+        if (hasBeenTreated)
+        {
+            return segment.GetNaasraIncrementAfterTreatment();
+        }
+
         // Get the estimated "settling-in" value depth from the lookup table
         double settingInValue= _domainModel.GetLookupValueNumber("settling_in_values", "naasra");
 
