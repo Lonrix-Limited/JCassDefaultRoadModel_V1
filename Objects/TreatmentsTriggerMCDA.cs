@@ -88,32 +88,7 @@ public class TreatmentsTriggerMCDA
 
     #region Preliminary checks for treatments
         
-    private bool CanDoAsphaltPreservationOrPreseal(RoadSegment segment, int period, bool isForPreseal)
-    {
-        //n : renw_secondcoat_flag = 0 AND n : para_csl_flag = 1 AND n : pcal_next_surf_cs_flag = 1 AND n : periods_to_next_treatment > 6
-
-        //Note: Check for 'periods_to_next_treatment > 6' is done in CandidateSelector.EvaluateCandidate method, so we do not need to check it here again.
-                
-        if (isForPreseal == false)
-        {
-            // If we cannot do AC (deflection too high) AND pavement age has not been reset yet, then we cannot do AC
-            if (segment.AsphaltOkFlag == false && segment.PavementAge > period) return false;
-        }
-        
-        
-        // If next surface is intended to be ChipSeal, not valid
-        if (segment.NextSurfaceIsChipSeal == true) return false;
-
-        // Do not add a treatment if the current surface is a ChipSeal
-        // ToDo: needs discussion. May be cases where current surfacing is AC
-        //if (segment.SurfaceIsChipSealFlag == 1) return false;
-
-        if (segment.SecondCoatNeeded) return false; // Do not add a preservation treatment if a second coat is needed
-
-        return true;
-
-    }
-
+    
     private bool CanDoRehabilitationOnChipSeal(RoadSegment segment)
     {
         //n : para_csl_flag = 1 AND n : pcal_can_rehab_flag = 1 AND n : pcal_next_surf_cs_flag = 1 AND n : periods_to_next_treatment > 6
@@ -262,8 +237,13 @@ public class TreatmentsTriggerMCDA
         // For preservation, if PDI is above the maximum threshold, do not add a treatment
         if (segment.PavementDistressIndex > _domainModel.Constants.TSSPreserveMaxPdiAC) return;
 
+        // If asphalt overlay is not allowed because of too high deflection etc, do not add a treatment
+        if (segment.AsphaltOkFlag == false) return; 
+
         double tssScore = TreatmentSuitabilityScorer.GetTSSForPreservationTreatment(segment, _domainModel, iPeriod);
-        if (tssScore <= _frameworkModel.Configuration.MinimumTreatmentSuitabilityScoreAllowed) return; // If the TSS score is below the minimum allowed, do not add a treatment
+        
+        // If the TSS score is below the minimum allowed, do not add a treatment
+        if (tssScore <= _frameworkModel.Configuration.MinimumTreatmentSuitabilityScoreAllowed) return; 
 
         double sdi = segment.SurfaceDistressIndex;
         string reason = $"SLA={Math.Round(segment.SurfaceAchievedLifePercent, 1)}";
@@ -278,7 +258,7 @@ public class TreatmentsTriggerMCDA
     }
 
     private void AddHoldingThinACIfValid(RoadSegment segment, int iPeriod, List<TreatmentInstance> treatments)
-    {
+    {        
         string treatmentName = "ThinAC_H";
         if (segment.NextSurfaceIsChipSeal == true) return;
 
@@ -291,8 +271,12 @@ public class TreatmentsTriggerMCDA
         // For preservation, if PDI is above the maximum threshold, do not add a treatment
         if (segment.PavementDistressIndex > _domainModel.Constants.TSSHoldingMaxPdiAC) return;
 
+        // For Holding AC, do not eliminate if asphalt overlay is not allowed (in 'segment.AsphaltOkFlag') because of too high deflection etc.
+        // This is because this treatment is assumed to include strengthening repairs to adress weak areas
+
         double tssScore = TreatmentSuitabilityScorer.GetTSSForPreservationTreatment(segment, _domainModel, iPeriod);
-        if (tssScore <= _frameworkModel.Configuration.MinimumTreatmentSuitabilityScoreAllowed) return; // If the TSS score is below the minimum allowed, do not add a treatment
+        // If the TSS score is below the minimum allowed, do not add a treatment
+        if (tssScore <= _frameworkModel.Configuration.MinimumTreatmentSuitabilityScoreAllowed) return; 
 
         double sdi = segment.SurfaceDistressIndex;
         string reason = $"SLA={Math.Round(segment.SurfaceAchievedLifePercent, 1)}";
@@ -340,10 +324,15 @@ public class TreatmentsTriggerMCDA
     {
         double presealAreaFraction = 0.0; // Default value
 
+        if (segment.ElementIndex == 3035 && iPeriod > 6)
+        {
+            int kk = 0;
+        }
+
         if (segment.NextSurfaceIsChipSeal == true) return;
 
-        int periodsToLastNonRoutineTreatment = this.PeriodsToLastTreatmentNotRoutineMaintenance(infoFromModel);
-
+        int periodsToLastNonRoutineTreatment = this.PeriodsToLastTreatmentNotRoutineMaintenance(infoFromModel, iPeriod);
+                
         // Do not add AC Heavy Maintenance if the periods since last non-routine treatment is less than the minimum allowed
         if (periodsToLastNonRoutineTreatment < _domainModel.Constants.MinPeriodsBetweenACHeavyMaint) return; 
 
@@ -449,12 +438,36 @@ public class TreatmentsTriggerMCDA
         return treatment;
     }
        
-    private int PeriodsToLastTreatmentNotRoutineMaintenance(Dictionary<string, object> infoFromModel)
+    private int PeriodsToLastTreatmentNotRoutineMaintenance(Dictionary<string, object> infoFromModel, int iPeriod)
     {
-        int periodsToLastTreatment = Convert.ToInt32(infoFromModel["periods_to_last_treatment"]);
-        string lastTreatmentName = infoFromModel["last_treatment_name"].ToString();
-        if (lastTreatmentName != "RMaint") return periodsToLastTreatment;
-        return 999; // Indicates that no non-routine treatment has been placed yet
+        if (infoFromModel["previous_treatments"] is null) return 999; // Indicates that no treatments have been placed yet
+
+        List<TreatmentInstance> previousTreatments = (List<TreatmentInstance>)infoFromModel["previous_treatments"];
+
+        TreatmentInstance lastNonRoutineMaintenanceTreatment = null;
+
+        // Loop over all previous treatments to find the most recent non-routine maintenance treatment
+        int minTreatmentPeriod = int.MaxValue;
+        foreach (TreatmentInstance treatment in previousTreatments)
+        {
+            if (treatment.TreatmentName != "RMaint")
+            {
+                int periodsToTreatment = iPeriod - treatment.TreatmentPeriod;
+                if (periodsToTreatment < minTreatmentPeriod)
+                {
+                    minTreatmentPeriod = periodsToTreatment;
+                    lastNonRoutineMaintenanceTreatment = treatment;
+                }
+            }
+        }
+        if (lastNonRoutineMaintenanceTreatment is not null)
+        {
+            return iPeriod - lastNonRoutineMaintenanceTreatment.TreatmentPeriod;
+        }
+        else
+        {
+            return 999; // Indicates that no non-routine treatment has been placed yet
+        }
     }
 
 }

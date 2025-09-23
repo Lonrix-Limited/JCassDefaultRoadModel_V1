@@ -232,9 +232,9 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 89 && iPeriod == 1)
+            if (iElemIndex == 3035 && iPeriod > 6)
             {
-                int kk = 9;
+                int kk = 0;
             }
 
             Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
