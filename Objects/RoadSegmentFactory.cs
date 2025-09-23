@@ -19,83 +19,80 @@ public static class RoadSegmentFactory
     /// <param name="model">Model object from which to refer the Raw Data schema</param>
     /// <param name="rawRow">Row of raw data values for each column in the schema</param>
     /// <returns></returns>
-    public static RoadSegment GetFromRawData(ModelBase model, string[] rawRow, int elementIndex)
+    public static RoadSegment GetFromRawData(ModelBase model, int elementIndex)
     {
         RoadSegment segment = new RoadSegment();
 
         segment.ElementIndex = elementIndex; // Set the element index for this segment
-        if (elementIndex == 123)
-        {
-            int kk = 9;
-        }
+        
 
         // Identification
-        segment.SegmentName = model.GetRawData_Text(rawRow, "file_seg_name");
-        segment.SectionID = model.GetRawData_Number(rawRow, "file_section_id");
-        segment.SectionName = model.GetRawData_Text(rawRow, "file_section_name");
-        segment.LocFrom = model.GetRawData_Number(rawRow, "file_loc_from");
-        segment.LocTo = model.GetRawData_Number(rawRow, "file_loc_to");
-        segment.LaneCode = model.GetRawData_Text(rawRow, "file_lane_name");
+        segment.SegmentName = model.GetInputDataText(segment.ElementIndex, "file_seg_name");
+        segment.SectionID = model.GetInputDataNumber(segment.ElementIndex, "file_section_id");
+        segment.SectionName = model.GetInputDataText(segment.ElementIndex, "file_section_name");
+        segment.LocFrom = model.GetInputDataNumber(segment.ElementIndex, "file_loc_from");
+        segment.LocTo = model.GetInputDataNumber(segment.ElementIndex, "file_loc_to");
+        segment.LaneCode = model.GetInputDataText(segment.ElementIndex, "file_lane_name");
 
         // Core measures
-        segment.LengthInMetre = model.GetRawData_Number(rawRow, "file_length");
-        segment.AreaSquareMetre = model.GetRawData_Number(rawRow, "file_area_m2");
+        segment.LengthInMetre = model.GetInputDataNumber(segment.ElementIndex, "file_length");
+        segment.AreaSquareMetre = model.GetInputDataNumber(segment.ElementIndex, "file_area_m2");
         segment.WidthInMetre = segment.AreaSquareMetre / segment.LengthInMetre;
 
         // Flags        
-        segment.CanTreatFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_can_treat_flag"));
-        segment.CanRehabFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_can_rehab_flag"));
-        segment.AsphaltOkFlag = Convert.ToBoolean(model.GetRawData_Text(rawRow, "file_ac_ok_flag"));
-        segment.EarliestTreatmentPeriod = model.GetRawData_Number(rawRow, "file_earliest_treat_period");
+        segment.CanTreatFlag = Convert.ToBoolean(model.GetInputDataText(segment.ElementIndex, "file_can_treat_flag"));
+        segment.CanRehabFlag = Convert.ToBoolean(model.GetInputDataText(segment.ElementIndex, "file_can_rehab_flag"));
+        segment.AsphaltOkFlag = Convert.ToBoolean(model.GetInputDataText(segment.ElementIndex, "file_ac_ok_flag"));
+        segment.EarliestTreatmentPeriod = model.GetInputDataNumber(segment.ElementIndex, "file_earliest_treat_period");
 
         // Classification
-        segment.UrbanRural = model.GetRawData_Text(rawRow, "file_urban_rural").ToLower();
-        segment.ONRC = model.GetRawData_Text(rawRow, "file_onrc").ToLower();
+        segment.UrbanRural = model.GetInputDataText(segment.ElementIndex, "file_urban_rural").ToLower();
+        segment.ONRC = model.GetInputDataText(segment.ElementIndex, "file_onrc").ToLower();
         
         
         //Lookup Road Class based on ONRC value (do NOTnuse file_road_class as this contains client-variant values)
         segment.RoadClass = model.GetLookupValueText("road_class", segment.ONRC);
 
         // Traffic        
-        segment.AverageDailyTraffic = model.GetRawData_Number(rawRow, "file_adt");
-        segment.HeavyVehiclePercentage = model.GetRawData_Number(rawRow, "file_heavy_perc");
-        segment.NumberOfBusRoutes = model.GetRawData_Number(rawRow, "file_no_of_bus_routes");
-        segment.TrafficGrowthPercent = model.GetRawData_Number(rawRow, "file_traff_growth_perc");
+        segment.AverageDailyTraffic = model.GetInputDataNumber(segment.ElementIndex, "file_adt");
+        segment.HeavyVehiclePercentage = model.GetInputDataNumber(segment.ElementIndex, "file_heavy_perc");
+        segment.NumberOfBusRoutes = model.GetInputDataNumber(segment.ElementIndex, "file_no_of_bus_routes");
+        segment.TrafficGrowthPercent = model.GetInputDataNumber(segment.ElementIndex, "file_traff_growth_perc");
 
         // Surfacing
-        segment.SurfaceClass = model.GetRawData_Text(rawRow, "file_surf_class").ToLower();
-        segment.NextSurface = model.GetRawData_Text(rawRow, "file_next_surf");        
-        segment.SurfacingDateString = model.GetRawData_Text(rawRow, "file_surf_date");
-        segment.SurfaceFunction = model.GetRawData_Text(rawRow, "file_surf_function");
-        segment.SurfaceMaterial = model.GetRawData_Text(rawRow, "file_surf_material");
-        segment.SurfaceExpectedLife = model.GetRawData_Number(rawRow, "file_surf_life_expected");
-        segment.SurfaceNumberOfLayers = model.GetRawData_Number(rawRow, "file_surf_layer_no");
-        segment.SurfaceThickness = model.GetRawData_Number(rawRow, "file_surf_thick");
+        segment.SurfaceClass = model.GetInputDataText(segment.ElementIndex, "file_surf_class").ToLower();
+        segment.NextSurface = model.GetInputDataText(segment.ElementIndex, "file_next_surf");        
+        segment.SurfacingDateString = model.GetInputDataText(segment.ElementIndex, "file_surf_date");
+        segment.SurfaceFunction = model.GetInputDataText(segment.ElementIndex, "file_surf_function");
+        segment.SurfaceMaterial = model.GetInputDataText(segment.ElementIndex, "file_surf_material");
+        segment.SurfaceExpectedLife = model.GetInputDataNumber(segment.ElementIndex, "file_surf_life_expected");
+        segment.SurfaceNumberOfLayers = model.GetInputDataNumber(segment.ElementIndex, "file_surf_layer_no");
+        segment.SurfaceThickness = model.GetInputDataNumber(segment.ElementIndex, "file_surf_thick");
 
         // Pavement        
-        segment.PavementDateString = model.GetRawData_Text(rawRow, "file_pave_date");
-        segment.PavementRemainingLife = model.GetRawData_Number(rawRow, "file_pave_remlife");
-        segment.FaultsAndMaintenanceSurfacingM2 = model.GetRawData_Number(rawRow, "file_su_fault_qty");
-        segment.FaultsAndMaintenancePavementM2 = model.GetRawData_Number(rawRow, "file_pa_fault_qty");
+        segment.PavementDateString = model.GetInputDataText(segment.ElementIndex, "file_pave_date");
+        segment.PavementRemainingLife = model.GetInputDataNumber(segment.ElementIndex, "file_pave_remlife");
+        segment.FaultsAndMaintenanceSurfacingM2 = model.GetInputDataNumber(segment.ElementIndex, "file_su_fault_qty");
+        segment.FaultsAndMaintenancePavementM2 = model.GetInputDataNumber(segment.ElementIndex, "file_pa_fault_qty");
 
         // Roughness and rutting
-        segment.RoughnessSurveyDateString = model.GetRawData_Text(rawRow, "file_rough_survey_date");
-        segment.Naasra85 = model.GetRawData_Number(rawRow, "file_naasra_85");
-        segment.RutSurveyDateString = model.GetRawData_Text(rawRow, "file_rut_survey_date");
-        segment.RutLwpMean85 = model.GetRawData_Number(rawRow, "file_rut_lwpmean_85");
-        segment.RutRwpMean85 = model.GetRawData_Number(rawRow, "file_rut_rwpmean_85");
+        segment.RoughnessSurveyDateString = model.GetInputDataText(segment.ElementIndex, "file_rough_survey_date");
+        segment.Naasra85 = model.GetInputDataNumber(segment.ElementIndex, "file_naasra_85");
+        segment.RutSurveyDateString = model.GetInputDataText(segment.ElementIndex, "file_rut_survey_date");
+        segment.RutLwpMean85 = model.GetInputDataNumber(segment.ElementIndex, "file_rut_lwpmean_85");
+        segment.RutRwpMean85 = model.GetInputDataNumber(segment.ElementIndex, "file_rut_rwpmean_85");
 
         // Condition survey
-        segment.ConditionSurveyDateString = model.GetRawData_Text(rawRow, "file_cond_survey_date");
+        segment.ConditionSurveyDateString = model.GetInputDataText(segment.ElementIndex, "file_cond_survey_date");
 
         // Condition percentages
-        segment.PctMeshCracks = model.GetRawData_Number(rawRow, "file_pct_allig");
-        segment.PctLongTransCracks = model.GetRawData_Number(rawRow, "file_pct_lt_crax");
-        segment.PctPotholes = model.GetRawData_Number(rawRow, "file_pct_poth");
-        segment.PctScabbing = model.GetRawData_Number(rawRow, "file_pct_scabb");
-        segment.PctFlushing = model.GetRawData_Number(rawRow, "file_pct_flush");
-        segment.PctShoving = model.GetRawData_Number(rawRow, "file_pct_shove");
-        segment.PctEdgeBreaks = model.GetRawData_Number(rawRow, "file_pct_edgebreak");
+        segment.PctMeshCracks = model.GetInputDataNumber(segment.ElementIndex, "file_pct_allig");
+        segment.PctLongTransCracks = model.GetInputDataNumber(segment.ElementIndex, "file_pct_lt_crax");
+        segment.PctPotholes = model.GetInputDataNumber(segment.ElementIndex, "file_pct_poth");
+        segment.PctScabbing = model.GetInputDataNumber(segment.ElementIndex, "file_pct_scabb");
+        segment.PctFlushing = model.GetInputDataNumber(segment.ElementIndex, "file_pct_flush");
+        segment.PctShoving = model.GetInputDataNumber(segment.ElementIndex, "file_pct_shove");
+        segment.PctEdgeBreaks = model.GetInputDataNumber(segment.ElementIndex, "file_pct_edgebreak");
 
         return segment;
     }
@@ -106,10 +103,11 @@ public static class RoadSegmentFactory
     /// dictionary holds keys mapping to both the raw input columns and to the model parameters, with the Values mapping to the corresponding values.
     /// </summary>
     /// <param name="frameworkModel">Model object from which to refer the Raw Data schema</param>
-    /// <param name="inputAndParameterValues">Dictionary provided by model containing all raw input values and parameter values with
-    /// keys mapping to either raw input columns or to parameter names/codes and the Values mapping to the corresponding values./param>
+    /// <param name="numParamValues">Dictionary provided by model containing last/current values for numeric model parameters./param>
+    /// <param name="textParamValues">Dictionary provided by model containing last/current values for numeric model parameters./param>
     /// <returns></returns>
-    public static RoadSegment GetFromModel(ModelBase frameworkModel, Dictionary<string, object> inputAndParameterValues, int elementIndex, int iPeriod)
+    public static RoadSegment GetFromModel(ModelBase frameworkModel, Dictionary<string, double> numInputValues, Dictionary<string, string> textInputValues, 
+        Dictionary<string, double> numParamValues, Dictionary<string, string> textParamValues, int elementIndex, int iPeriod)
     {
         RoadSegment segment = new RoadSegment();
 
@@ -119,139 +117,126 @@ public static class RoadSegmentFactory
         segment.ElementIndex = elementIndex; // Set the element index for this segment
 
         // Identification
-        segment.SegmentName = Convert.ToString(inputAndParameterValues["file_seg_name"]);
-        segment.SectionID = Convert.ToInt32(inputAndParameterValues["file_section_id"]);
-        segment.SectionName = Convert.ToString(inputAndParameterValues["file_section_name"]);
-        segment.LocFrom = Convert.ToInt32(inputAndParameterValues["file_loc_from"]);
-        segment.LocTo = Convert.ToInt32(inputAndParameterValues["file_loc_to"]);
-        segment.LaneCode = Convert.ToString(inputAndParameterValues["file_lane_name"]);
+        segment.SegmentName = textInputValues["file_seg_name"];
+        segment.SectionID = Convert.ToInt32(numInputValues["file_section_id"]);
+        segment.SectionName = textInputValues["file_section_name"];
+        segment.LocFrom = Convert.ToInt32(numInputValues["file_loc_from"]);
+        segment.LocTo = Convert.ToInt32(numInputValues["file_loc_to"]);
+        segment.LaneCode = textInputValues["file_lane_name"];
 
         // Core measures
-        segment.LengthInMetre = Convert.ToDouble(inputAndParameterValues["file_length"]);
-        segment.AreaSquareMetre = Convert.ToDouble(inputAndParameterValues["file_area_m2"]);
+        segment.LengthInMetre = numInputValues["file_length"];
+        segment.AreaSquareMetre = numInputValues["file_area_m2"];
         segment.WidthInMetre = segment.AreaSquareMetre / segment.LengthInMetre;
 
         // Flags        
-        segment.CanTreatFlag = Convert.ToBoolean(inputAndParameterValues["file_can_treat_flag"]);
-        segment.CanRehabFlag = Convert.ToBoolean(inputAndParameterValues["file_can_rehab_flag"]);        
-        segment.AsphaltOkFlag = Convert.ToBoolean(inputAndParameterValues["file_ac_ok_flag"]);
-        segment.EarliestTreatmentPeriod = Convert.ToInt32(inputAndParameterValues["file_earliest_treat_period"]);
+        segment.CanTreatFlag = Convert.ToBoolean(textInputValues["file_can_treat_flag"]);
+        segment.CanRehabFlag = Convert.ToBoolean(textInputValues["file_can_rehab_flag"]);        
+        segment.AsphaltOkFlag = Convert.ToBoolean(textInputValues["file_ac_ok_flag"]);
+        segment.EarliestTreatmentPeriod = Convert.ToInt32(numInputValues["file_earliest_treat_period"]);
 
         // TODO: To discuss and make hardcoded value of 7 a lookup parameter
         if (iPeriod > 7) segment.CanRehabFlag = true; // For congruence with JFunction model, we allow rehab after 7 periods
 
-        segment.AsphaltOkFlag = Convert.ToBoolean(inputAndParameterValues["file_ac_ok_flag"]);
+        segment.AsphaltOkFlag = Convert.ToBoolean(textInputValues["file_ac_ok_flag"]);
 
         // Classification
-        segment.UrbanRural = Convert.ToString(inputAndParameterValues["file_urban_rural"]).ToLower();
-        segment.ONRC = Convert.ToString(inputAndParameterValues["file_onrc"]).ToLower();
+        segment.UrbanRural = textInputValues["file_urban_rural"].ToLower();
+        segment.ONRC = textInputValues["file_onrc"].ToLower();
                 
         //Lookup Road Class based on ONRC value (do NOT use file_road_class as this contains client-variant values)
         segment.RoadClass = frameworkModel.GetLookupValueText("road_class", segment.ONRC);
 
         // Traffic                
-        segment.HeavyVehiclePercentage = Convert.ToDouble(inputAndParameterValues["file_heavy_perc"]);
-        segment.NumberOfBusRoutes = Convert.ToDouble(inputAndParameterValues["file_no_of_bus_routes"]);
-        segment.TrafficGrowthPercent = Convert.ToDouble(inputAndParameterValues["file_traff_growth_perc"]);
+        segment.HeavyVehiclePercentage = numInputValues["file_heavy_perc"];
+        segment.NumberOfBusRoutes = numInputValues["file_no_of_bus_routes"];
+        segment.TrafficGrowthPercent = numInputValues["file_traff_growth_perc"];
 
         // Surfacing
-        segment.SurfaceClass = Convert.ToString(inputAndParameterValues["file_surf_class"]).ToLower();
-        segment.NextSurface = Convert.ToString(inputAndParameterValues["file_next_surf"]);
-        segment.SurfacingDateString = Convert.ToString(inputAndParameterValues["file_surf_date"]);
+        segment.SurfaceClass = textInputValues["file_surf_class"].ToLower();
+        segment.NextSurface = textInputValues["file_next_surf"];
+        segment.SurfacingDateString = textInputValues["file_surf_date"];
         
 
         // Pavement        
-        segment.PavementDateString = Convert.ToString(inputAndParameterValues["file_pave_date"]);
-        segment.PavementRemainingLife = Convert.ToDouble(inputAndParameterValues["file_pave_remlife"]);
-        segment.FaultsAndMaintenanceSurfacingM2 = Convert.ToDouble(inputAndParameterValues["file_su_fault_qty"]);
-        segment.FaultsAndMaintenancePavementM2 = Convert.ToDouble(inputAndParameterValues["file_pa_fault_qty"]);
+        segment.PavementDateString = textInputValues["file_pave_date"];
+        segment.PavementRemainingLife = numInputValues["file_pave_remlife"];
+        segment.FaultsAndMaintenanceSurfacingM2 = numInputValues["file_su_fault_qty"];
+        segment.FaultsAndMaintenancePavementM2 = numInputValues["file_pa_fault_qty"];
 
         // Roughness and rutting
-        segment.RoughnessSurveyDateString = Convert.ToString(inputAndParameterValues["file_rough_survey_date"]);        
-        segment.RutSurveyDateString = Convert.ToString(inputAndParameterValues["file_rut_survey_date"]);
-        segment.RutLwpMean85 = Convert.ToDouble(inputAndParameterValues["file_rut_lwpmean_85"]);  // Original raw rutting value
-        segment.RutRwpMean85 = Convert.ToDouble(inputAndParameterValues["file_rut_rwpmean_85"]);  // Original raw rutting value
+        segment.RoughnessSurveyDateString = textInputValues["file_rough_survey_date"];        
+        segment.RutSurveyDateString = textInputValues["file_rut_survey_date"];
+        segment.RutLwpMean85 = numInputValues["file_rut_lwpmean_85"];  // Original raw rutting value
+        segment.RutRwpMean85 = numInputValues["file_rut_rwpmean_85"];  // Original raw rutting value
 
         // Condition survey
-        segment.ConditionSurveyDateString = Convert.ToString(inputAndParameterValues["file_cond_survey_date"]);
+        segment.ConditionSurveyDateString = textInputValues["file_cond_survey_date"];
 
         // Now set the properties that depend on model parameters: Work in order of model parameter definition set
         // in the setup file so that we can more easily spot missing parameters.
 
-        segment.AverageDailyTraffic = Convert.ToDouble(inputAndParameterValues["para_adt"]);
+        segment.AverageDailyTraffic = numParamValues["para_adt"];
         // HCV is automatically updated based on ADT and HeavyVehiclePercentage
-        segment.PavementAge = Convert.ToDouble(inputAndParameterValues["para_pave_age"]);
-        segment.PavementRemainingLife = Convert.ToDouble(inputAndParameterValues["para_pave_remlife"]);
+        segment.PavementAge = numParamValues["para_pave_age"];
+        segment.PavementRemainingLife = numParamValues["para_pave_remlife"];
         // Note: segment.PavementAchievedLife will be automatically calculated by the model based on the PavementAge and PavementExpectedLife
         // Note segment.HCVRisk will be automatically calculated by the model based on the PavementUse and HeavyVehiclePercentage
 
-        segment.SurfaceMaterial = Convert.ToString(inputAndParameterValues["para_surf_mat"]);
-        segment.SurfaceClass = Convert.ToString(inputAndParameterValues["para_surf_class"]).ToLower();
+        segment.SurfaceMaterial = textParamValues["para_surf_mat"];
+        segment.SurfaceClass = textParamValues["para_surf_class"].ToLower();
         // Automatically updated:
         // segment.SurfaceIsChipSealFlag 
         // segment.SurfaceIsChipSealOrACFlag 
         // segment.SurfaceRoadType
-        segment.SurfaceThickness = Convert.ToDouble(inputAndParameterValues["para_surf_thick"]);
-        segment.SurfaceNumberOfLayers = Convert.ToDouble(inputAndParameterValues["para_surf_layers"]);
-        segment.SurfaceFunction = Convert.ToString(inputAndParameterValues["para_surf_func"]);
-        segment.SurfaceExpectedLife = Convert.ToDouble(inputAndParameterValues["para_surf_exp_life"]);
-        segment.SurfaceAge = Convert.ToDouble(inputAndParameterValues["para_surf_age"]);         
+        segment.SurfaceThickness = numParamValues["para_surf_thick"];
+        segment.SurfaceNumberOfLayers = numParamValues["para_surf_layers"];
+        segment.SurfaceFunction = textParamValues["para_surf_func"];
+        segment.SurfaceExpectedLife = numParamValues["para_surf_exp_life"];
+        segment.SurfaceAge = numParamValues["para_surf_age"];         
         // Automatically updated:
         // segment.SurfaceAchievedLifePercent
         // segment.SurfaceRemainingLife 
 
         // Visual Distresses
-        segment.PctFlushing = Convert.ToDouble(inputAndParameterValues["para_flush_pct"]);
-        segment.FlushingModelInfo = Convert.ToString(inputAndParameterValues["para_flush_info"]);
+        segment.PctFlushing = numParamValues["para_flush_pct"];
+        segment.FlushingModelInfo = textParamValues["para_flush_info"];
 
-        segment.PctEdgeBreaks = Convert.ToDouble(inputAndParameterValues["para_edgeb_pct"]);
-        segment.EdgeBreakModelInfo = Convert.ToString(inputAndParameterValues["para_edgeb_info"]);
+        segment.PctEdgeBreaks = numParamValues["para_edgeb_pct"];
+        segment.EdgeBreakModelInfo = textParamValues["para_edgeb_info"];
 
-        segment.PctScabbing = Convert.ToDouble(inputAndParameterValues["para_scabb_pct"]);
-        segment.ScabbingModelInfo = Convert.ToString(inputAndParameterValues["para_scabb_info"]);
+        segment.PctScabbing = numParamValues["para_scabb_pct"];
+        segment.ScabbingModelInfo = textParamValues["para_scabb_info"];
 
-        segment.PctLongTransCracks = Convert.ToDouble(inputAndParameterValues["para_lt_cracks_pct"]);
-        segment.LTCracksModelInfo = Convert.ToString(inputAndParameterValues["para_lt_cracks_info"]);
+        segment.PctLongTransCracks = numParamValues["para_lt_cracks_pct"];
+        segment.LTCracksModelInfo = textParamValues["para_lt_cracks_info"];
 
-        segment.PctMeshCracks = Convert.ToDouble(inputAndParameterValues["para_mesh_cracks_pct"]);
-        segment.MeshCrackModelInfo = Convert.ToString(inputAndParameterValues["para_mesh_cracks_info"]);
+        segment.PctMeshCracks = numParamValues["para_mesh_cracks_pct"];
+        segment.MeshCrackModelInfo = textParamValues["para_mesh_cracks_info"];
 
-        segment.PctShoving = Convert.ToDouble(inputAndParameterValues["para_shove_pct"]);
-        segment.ShovingModelInfo = Convert.ToString(inputAndParameterValues["para_shove_info"]);
+        segment.PctShoving = numParamValues["para_shove_pct"];
+        segment.ShovingModelInfo =  textParamValues["para_shove_info"];
 
-        segment.PctPotholes = Convert.ToDouble(inputAndParameterValues["para_poth_pct"]);
-        segment.PotholeModelInfo = Convert.ToString(inputAndParameterValues["para_poth_info"]);
+        segment.PctPotholes = numParamValues["para_poth_pct"];
+        segment.PotholeModelInfo = textParamValues["para_poth_info"];
 
         //Rutting and Naasra
-        segment.RutIncrement = Convert.ToDouble(inputAndParameterValues["para_rut_increm"]);  // Updated rut
-        segment.RutParameterValue = Convert.ToDouble(inputAndParameterValues["para_rut"]);
+        segment.RutIncrement = numParamValues["para_rut_increm"];  // Updated rut
+        segment.RutParameterValue = numParamValues["para_rut"];
 
-        segment.NaasraIncrement = Convert.ToDouble(inputAndParameterValues["para_naasra_increm"]);  // Updated Naasra increment
-        segment.Naasra85 = Convert.ToDouble(inputAndParameterValues["para_naasra"]);  // Updated Naasra value
+        segment.NaasraIncrement = numParamValues["para_naasra_increm"];  // Updated Naasra increment
+        segment.Naasra85 = numParamValues["para_naasra"];  // Updated Naasra value
 
-        // Calculated values (to be calculated after this factor output returns):
-        // para_sdi        
-        //para_pdi
-        //para_obj_distress
-        //para_obj_rsl
-        //para_obj_rutting
-        //para_obj_naasra
-        //para_obj_o
-        //para_obj
-        //para_obj_auc
-        //para_maint_cost_perkm
-        //para_csl_status
-        //para_csl_flag
+        // Calculate SDI, PDI, SLA, Objective Function sub-values etc.        
+        segment.UpdateFormulaValuesFromParameters(numParamValues, textParamValues);
 
-        segment.UpdateFormulaValuesFromParameters(inputAndParameterValues);
-
-        segment.TreatmentCount = Convert.ToInt32(inputAndParameterValues["para_treat_count"]); // Will update IsTreated flag
+        segment.TreatmentCount = Convert.ToInt32(numParamValues["para_treat_count"]); // Will update IsTreated flag
         // para_is_treated_flag = automatically calculated based on treatment count
 
-        segment.PavementDistressIndexRank = Convert.ToDouble(inputAndParameterValues["para_pdi_rank"]);
-        segment.RutRank = Convert.ToInt32(inputAndParameterValues["para_rut_rank"]);
-        segment.SurfaceDistressIndexRank = Convert.ToDouble(inputAndParameterValues["para_sdi_rank"]);
-        segment.SurfaceLifeAchievedRank = Convert.ToDouble(inputAndParameterValues["para_sla_rank"]);
+        segment.PavementDistressIndexRank = numParamValues["para_pdi_rank"];
+        segment.RutRank = Convert.ToInt32(numParamValues["para_rut_rank"]);
+        segment.SurfaceDistressIndexRank = numParamValues["para_sdi_rank"];
+        segment.SurfaceLifeAchievedRank = numParamValues["para_sla_rank"];
 
         // Ensure that the method to re-calculate index values are called on return
 

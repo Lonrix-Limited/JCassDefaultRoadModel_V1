@@ -1,10 +1,11 @@
-﻿using System;
+﻿using JCass_Economics.Utilities;
+using JCass_ModelCore.DomainModels;
+using JCass_ModelCore.Treatments;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using JCass_ModelCore.DomainModels;
-using JCass_ModelCore.Treatments;
 
 namespace JCassDefaultRoadModel.Objects;
 
@@ -24,8 +25,6 @@ public class RoadNetworkModel : DomainModelBase
     public ShovingModel ShovingModel;
     public PotholeModel PotholeModel;
 
-
-
     public RoadNetworkModel()
     {
         //Nothing to do here. Note that property 'model' mapping to the ModelBase class (i.e. the Framework Model)
@@ -36,7 +35,7 @@ public class RoadNetworkModel : DomainModelBase
     /// Stub that allows custom domain models to set up custom elements such as Machine Learning models,
     /// lookups, special objects etc
     /// </summary>
-    public override void SetupInstance(List<string[]> rawData)
+    public override void SetupInstance()
     {
         try
         {
@@ -85,10 +84,13 @@ public class RoadNetworkModel : DomainModelBase
     /// for all elements at the start of the model run. Use the raw/input data values with domain logic to assign an initial value to all
     /// modelling parameters. 
     /// </summary>
-    /// <param name="iElemIndex">Zero-based index of the element</param>    
-    /// <param name="rawRow">Input row associated with this element</param>    
-    /// <returns>An array of double values representing the actual or encoded values for all model parameters</returns>
-    public override double[] Initialise(int iElemIndex, string[] rawRow)
+    /// <param name="iElemIndex">Zero-based index of the element</param>        
+    /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
+    /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
+    /// <param name="numModParamValues">Return value: Sink holding values for numeric parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>
+    /// <param name="textModParamValues">Return value: Sink holding values for text parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>  
+    public override void Initialise(int iElemIndex, Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
+            Action<string, double> numModParamValues, Action<string, string> textModParamValues)
     {
         try
         {
@@ -97,19 +99,16 @@ public class RoadNetworkModel : DomainModelBase
                 int kk = 9;
             }
 
-            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, rawRow, 0);
-            RoadSegment segment = _initialiser.InitialiseSegment(rawRow, iElemIndex);
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, 0);
+            RoadSegment segment = _initialiser.InitialiseSegment(iElemIndex);
 
             // Update the formula values such as PDI, SDI, Objective Value Parameters, Maintenance Cost and CSA Status/Outcome
             // before getting the parameter values
             segment.UpdateFormulaValues(this.model, this, 0,infoFromModel);
-            
-            Dictionary<string, object> parameterValues = segment.GetParameterValues();
 
-            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
-            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
-
-            return newValues;  //Return model parameter values for this element
+            // By updating the sinks, the model will automatically update the values in the Framework Model matrices
+            segment.SetParameterValues(numModParamValues, textModParamValues);
+                        
         }
         catch (Exception ex)
         {
@@ -124,10 +123,13 @@ public class RoadNetworkModel : DomainModelBase
     /// </summary>
     /// <param name="iElemIndex">Zero-based index of the element</param>
     /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="rawRow">Input row associated with this element</param>
-    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
-    /// <returns>An array of double values representing the actual or encoded values for all model parameters after Reset is applied</returns>
-    public override double[] Reset(TreatmentInstance treatment, int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
+    /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
+    /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
+    /// <param name="numModParamValues">Return value: Sink holding values for numeric parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>
+    /// <param name="textModParamValues">Return value: Sink holding values for text parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>        
+    public override void Reset(TreatmentInstance treatment, int iElemIndex, int iPeriod,
+        Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
+        Action<string, double> numModParamValues, Action<string, string> textModParamValues)
     {
         try
         {
@@ -135,24 +137,20 @@ public class RoadNetworkModel : DomainModelBase
             {
                 int kk = 9;
             }
-
-            Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
-
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex, iPeriod);
-            //segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
             
+            var (numPrevValues, textPrevValues) = model.GetParameterValues(iElemIndex, iPeriod - 1);
+
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, treatment);
+
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numPrevValues, textPrevValues, iElemIndex, iPeriod);
+                       
 
             // Apply Resets
             RoadSegment resettedSegment = _resetter.Reset(segment, iPeriod, treatment);
             resettedSegment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
             
-
-            Dictionary<string, object> parameterValues = resettedSegment.GetParameterValues();
-
-            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
-            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
-
-            return newValues;  //Return model parameter values for this element
+            resettedSegment.SetParameterValues(numModParamValues, textModParamValues);
+            
         }
         catch (Exception ex)
         {
@@ -166,10 +164,12 @@ public class RoadNetworkModel : DomainModelBase
     /// </summary>
     /// <param name="iElemIndex">Zero-based index of the element</param>
     /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="rawRow">Input row associated with this element</param>
-    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
-    /// <returns>An array of double values representing the actual or encoded values for all model parameters after the Increment is applied</returns>
-    public override double[] Increment(int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
+    /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
+    /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
+    /// <param name="numModParamValues">Return value: Sink holding values for numeric parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>
+    /// <param name="textModParamValues">Return value: Sink holding values for text parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>        
+    public override void Increment(int iElemIndex, int iPeriod, Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
+        Action<string, double> numModParamValues, Action<string, string> textModParamValues)
     {
         try
         {
@@ -178,22 +178,18 @@ public class RoadNetworkModel : DomainModelBase
                 int kk = 9;
             }
 
-            Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
+            var (numPrevValues, textPrevValues) = model.GetParameterValues(iElemIndex, iPeriod - 1);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex, iPeriod);
-            //segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
-            //segment.UpdateCandidateSelectionResult(this.model, this, 0, infoFromModel);
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, null);
 
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numPrevValues, textPrevValues, iElemIndex, iPeriod);
+            
             // Apply increments here
             RoadSegment incrementedSegment = _incrementer.Increment(segment, iPeriod);
             incrementedSegment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);
 
-            Dictionary<string, object> parameterValues = incrementedSegment.GetParameterValues();
-
-            //Get the initialised values from the updated dictionary and extract the parameter values to return for model parameters
-            double[] newValues = this.model.GetModelParameterValuesFromDomainModelResultSet(new double[this.model.NParameters], parameterValues);
-
-            return newValues;  //Return model parameter values for this element
+            incrementedSegment.SetParameterValues(numModParamValues, textModParamValues);
+            
         }
         catch (Exception ex)
         {
@@ -208,10 +204,14 @@ public class RoadNetworkModel : DomainModelBase
     /// </summary>
     /// <param name="iElemIndex">Zero-based index of the element</param>
     /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="rawRow">Input row associated with this element</param>
-    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
+    /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
+    /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
+    /// <param name="numModParamValues">Values for Numeric Model Parameters as they were in the previous epoch. Keys are parameter names</param>
+    /// <param name="textModParamValues">Values for Text Model Parameters as they were at the previous epoch. Keys are parameter names</param>
     /// <returns>List of Treatment Strategies to consider for this element</returns>
-    public override List<TreatmentStrategy> GetStrategies(int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
+    public override List<TreatmentStrategy> GetStrategies(int iElemIndex, int iPeriod,
+        Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
+        Dictionary<string, double> numModParamValues, Dictionary<string, string> textModParamValues)
     {
         throw new NotImplementedException();
     }
@@ -225,10 +225,14 @@ public class RoadNetworkModel : DomainModelBase
     /// </summary>
     /// <param name="iElemIndex">Zero-based index of the element</param>
     /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="rawRow">Input row associated with this element</param>
-    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
+    /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
+    /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
+    /// <param name="numModParamValues">Values for Numeric Model Parameters as they were in the previous epoch. Keys are parameter names</param>
+    /// <param name="textModParamValues">Values for Text Model Parameters as they were at the previous epoch. Keys are parameter names</param>
     /// <returns>A list of all treatment instances to consider for this element in the optimisation stage</returns>
-    public override List<TreatmentInstance> GetTreatmentCandidates(int iElemIndex, int iPeriod, string[] rawRow, double[] prevValues)
+    public override List<TreatmentInstance> GetTreatmentCandidates(int iElemIndex, int iPeriod,
+        Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
+        Dictionary<string, double> numModParamValues, Dictionary<string, string> textModParamValues)
     {
         try
         {
@@ -237,9 +241,9 @@ public class RoadNetworkModel : DomainModelBase
                 int kk = 0;
             }
 
-            Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawRow, prevValues, iPeriod);
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, null);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex, iPeriod);            
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numModParamValues, textModParamValues, iElemIndex, iPeriod);            
             
             TreatmentsTriggerMCDA mcdaTriggerFunction = new TreatmentsTriggerMCDA(this.model, this);
             List<TreatmentInstance> candidates = mcdaTriggerFunction.GetTriggeredTreatments(segment, iPeriod, infoFromModel);
@@ -258,18 +262,21 @@ public class RoadNetworkModel : DomainModelBase
     /// called from the Framework Model after treatment selection to determine if there is any triggered maintenance that should be applied to the element.
     /// If there is no triggered maintenance, return null.
     /// </summary>
-    /// <param name="iElemIndex">Zero-based index of the element</param>
+    /// <param name="ielem">Zero-based index of the element</param>
     /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="rawRow">Input row associated with this element</param>
-    /// <param name="prevValues">Double-encoded values for all parameters for this element in the previous epoch</param>
+    /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
+    /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
+    /// <param name="numModParamValues">Values for Numeric Model Parameters as they were in the previous epoch. Keys are parameter names</param>
+    /// <param name="textModParamValues">Values for Text Model Parameters as they were at the previous epoch. Keys are parameter names</param>
     /// <returns>A Treatment Instance object representing Routine Maintenance</returns>
-    public override TreatmentInstance GetTriggeredMaintenance(int iElemIndex, int iPeriod, double[] paramValues, string[] rawData)
+    public override TreatmentInstance GetTriggeredMaintenance(int iElemIndex, int iPeriod,
+        Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
+        Dictionary<string, double> numModParamValues, Dictionary<string, string> textModParamValues)
     {
         try
         {
-            Dictionary<string, object> infoFromModel = model.GetParametersForDomainModel(iElemIndex, rawData, paramValues, iPeriod);
-
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, infoFromModel, iElemIndex, iPeriod);
+            Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, null);
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numModParamValues, textModParamValues, iElemIndex, iPeriod);
             segment.UpdateFormulaValues(this.model, this, iPeriod, infoFromModel);  //Immediately update the formula values for the segment
 
             return RoutineMaintenance.GetRoutineMaintenance(segment, iPeriod);
@@ -280,25 +287,5 @@ public class RoadNetworkModel : DomainModelBase
             throw new Exception($"Error triggering Routine Maintenance on element index {iElemIndex}. Details: {ex.Message}");
         }
     }
-
-    
-        
-
-    /// <summary>
-    /// Omit this method. It is deprecated.
-    /// </summary>
-    /// <param name="iElemIndex"></param>
-    /// <param name="rawRow"></param>
-    /// <returns></returns>
-    public override double[] InitialiseForCalibration(int iElemIndex, string[] rawRow)
-    {
-        throw new NotImplementedException();
-    }
-
-
-    
-
-
-
-
+   
 }

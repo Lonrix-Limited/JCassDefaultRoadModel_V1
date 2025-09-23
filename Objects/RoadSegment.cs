@@ -966,20 +966,20 @@ public class RoadSegment
         _candidateSelectionInfo = csResult.Outcome;        
     }
 
-    public void UpdateFormulaValuesFromParameters(Dictionary<string, object> parameterValues)
+    public void UpdateFormulaValuesFromParameters(Dictionary<string, double> numParamValues, Dictionary<string, string> textParamValues)
     {        
-        _surfaceDistressIndex = Convert.ToDouble(parameterValues["para_sdi"]); 
-        _pavementDistressIndex = Convert.ToDouble(parameterValues["para_pdi"]); 
-        _objectiveDistressIndex = Convert.ToDouble(parameterValues["para_obj_distress"]); 
-        _objectiveRemainingSurfaceLife = Convert.ToDouble(parameterValues["para_obj_rsl"]); 
-        _objectiveRutting = Convert.ToDouble(parameterValues["para_obj_rutting"]); 
-        _objectiveNaasra = Convert.ToDouble(parameterValues["para_obj_naasra"]); 
-        _objectiveValueRaw = Convert.ToDouble(parameterValues["para_obj_o"]);
-        _objectiveValue = Convert.ToDouble(parameterValues["para_obj"]);
-        _objectiveAreaUnderCurve = Convert.ToDouble(parameterValues["para_obj_auc"]);
-        _maintenanceCostPerKm = Convert.ToDouble(parameterValues["para_maint_cost_perkm"]); 
-        _candidateSelectionInfo = Convert.ToString(parameterValues["para_csl_status"]); 
-        _isCandidateForTreatment = Convert.ToInt32(parameterValues["para_csl_flag"]); 
+        _surfaceDistressIndex = numParamValues["para_sdi"]; 
+        _pavementDistressIndex = numParamValues["para_pdi"]; 
+        _objectiveDistressIndex = numParamValues["para_obj_distress"]; 
+        _objectiveRemainingSurfaceLife = numParamValues["para_obj_rsl"]; 
+        _objectiveRutting = numParamValues["para_obj_rutting"]; 
+        _objectiveNaasra = numParamValues["para_obj_naasra"]; 
+        _objectiveValueRaw = numParamValues["para_obj_o"];
+        _objectiveValue = numParamValues["para_obj"];
+        _objectiveAreaUnderCurve = numParamValues["para_obj_auc"];
+        _maintenanceCostPerKm = numParamValues["para_maint_cost_perkm"]; 
+        _candidateSelectionInfo = textParamValues["para_csl_status"]; 
+        _isCandidateForTreatment = Convert.ToInt32(numParamValues["para_csl_flag"]); 
     }
 
     private double GetPavementDistressIndex(ModelBase frameworkModel, RoadNetworkModel domainModel, int currentPeriod)
@@ -1102,88 +1102,84 @@ public class RoadSegment
     }
 
     /// <summary>
-    /// Creates a dictionary that holds a key for each model parameter and assigns the appropriate value from the segment object.
+    /// Updates the sinks mapping back to parameter values in the model. 
     /// </summary>
-    /// <param name="iPeriod">Current modelling period (e.g. 1,2,3,...)</param>
-    /// <param name="specialPlaceholders"> Dictionary containing special placeholder values from model that may be used in the calculation of parameter values.</param>
-    /// <returns>A dictionary with parameter names as keys and their corresponding values from the segment</returns>
-    public Dictionary<string, object> GetParameterValues()
-    {        
-        Dictionary<string, object> paramValues = new Dictionary<string, object>();
-        paramValues["para_adt"] = this.AverageDailyTraffic;
-        paramValues["para_hcv"] = this.HeavyVehiclesPerDay;
+    /// <param name="numModParamValues">Return value: Sink holding values for numeric parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>
+    /// <param name="textModParamValues">Return value: Sink holding values for text parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>     
+    public void SetParameterValues(Action<string, double> numModParamValues, Action<string, string> textModParamValues)
+    {
+        numModParamValues("para_adt", this.AverageDailyTraffic);
+        numModParamValues("para_hcv", this.HeavyVehiclesPerDay);
 
-        paramValues["para_pave_age"] = this.PavementAge;
-        paramValues["para_pave_remlife"] = this.PavementRemainingLife;
-        paramValues["para_pave_life_ach"] = this.PavementAchievedLife;
-        paramValues["para_hcv_risk"] = this.HCVRisk;
+        numModParamValues("para_pave_age", this.PavementAge);
+        numModParamValues("para_pave_remlife", this.PavementRemainingLife);
+        numModParamValues("para_pave_life_ach", this.PavementAchievedLife);
+        numModParamValues("para_hcv_risk", this.HCVRisk);
 
-        paramValues["para_surf_mat"] = this.SurfaceMaterial;
-        paramValues["para_surf_class"] = this.SurfaceClass;
-        paramValues["para_surf_cs_flag"] = this.SurfaceIsChipSealFlag;
-        paramValues["para_surf_cs_or_ac_flag"] = this.SurfaceIsChipSealOrACFlag;
-        paramValues["para_surf_road_type"] = this.SurfaceRoadType;
-        paramValues["para_surf_thick"] = this.SurfaceThickness;
-        paramValues["para_surf_layers"] = this.SurfaceNumberOfLayers;
-        paramValues["para_surf_func"] = this.SurfaceFunction;
-        paramValues["para_surf_exp_life"] = this.SurfaceExpectedLife;
-        paramValues["para_surf_age"] = this.SurfaceAge;
-        paramValues["para_surf_life_ach"] = this.SurfaceAchievedLifePercent;
-        paramValues["para_surf_remain_life"] = this.SurfaceRemainingLife;
+        textModParamValues("para_surf_mat", this.SurfaceMaterial);
+        textModParamValues("para_surf_class", this.SurfaceClass);
+        numModParamValues("para_surf_cs_flag", this.SurfaceIsChipSealFlag);
+        numModParamValues("para_surf_cs_or_ac_flag", this.SurfaceIsChipSealOrACFlag);
+        textModParamValues("para_surf_road_type", this.SurfaceRoadType);
+        numModParamValues("para_surf_thick", this.SurfaceThickness);
+        numModParamValues("para_surf_layers", this.SurfaceNumberOfLayers);
+        textModParamValues("para_surf_func", this.SurfaceFunction);
+        numModParamValues("para_surf_exp_life", this.SurfaceExpectedLife);
+        numModParamValues("para_surf_age", this.SurfaceAge);
+        numModParamValues("para_surf_life_ach", this.SurfaceAchievedLifePercent);
+        numModParamValues("para_surf_remain_life", this.SurfaceRemainingLife);
 
-        paramValues["para_flush_pct"] = this.PctFlushing;
-        paramValues["para_flush_info"] = this.FlushingModelInfo;
+        numModParamValues("para_flush_pct", this.PctFlushing);
+        textModParamValues("para_flush_info", this.FlushingModelInfo);
 
-        paramValues["para_edgeb_pct"] = this.PctEdgeBreaks;
-        paramValues["para_edgeb_info"] = this.EdgeBreakModelInfo;
+        numModParamValues("para_edgeb_pct", this.PctEdgeBreaks);
+        textModParamValues("para_edgeb_info", this.EdgeBreakModelInfo);
 
-        paramValues["para_scabb_pct"] = this.PctScabbing;
-        paramValues["para_scabb_info"] = this.ScabbingModelInfo;
+        numModParamValues("para_scabb_pct", this.PctScabbing);
+        textModParamValues("para_scabb_info", this.ScabbingModelInfo);
 
-        paramValues["para_lt_cracks_pct"] = this.PctLongTransCracks;
-        paramValues["para_lt_cracks_info"] = this.LTCracksModelInfo;
+        numModParamValues("para_lt_cracks_pct", this.PctLongTransCracks);
+        textModParamValues("para_lt_cracks_info", this.LTCracksModelInfo);
 
-        paramValues["para_mesh_cracks_pct"] = this.PctMeshCracks;
-        paramValues["para_mesh_cracks_info"] = this.MeshCrackModelInfo;
+        numModParamValues("para_mesh_cracks_pct", this.PctMeshCracks);
+        textModParamValues("para_mesh_cracks_info", this.MeshCrackModelInfo);
 
-        paramValues["para_shove_pct"] = this.PctShoving;
-        paramValues["para_shove_info"] = this.ShovingModelInfo;
+        numModParamValues("para_shove_pct", this.PctShoving);
+        textModParamValues("para_shove_info", this.ShovingModelInfo);
 
-        paramValues["para_poth_pct"] = this.PctPotholes;
-        paramValues["para_poth_info"] = this.PotholeModelInfo;
+        numModParamValues("para_poth_pct", this.PctPotholes);
+        textModParamValues("para_poth_info", this.PotholeModelInfo);
 
-        paramValues["para_rut_increm"] = this.RutIncrement;
-        paramValues["para_rut"] = this.RutParameterValue;
+        numModParamValues("para_rut_increm", this.RutIncrement);
+        numModParamValues("para_rut", this.RutParameterValue);
 
-        paramValues["para_naasra_increm"] = this.NaasraIncrement;
-        paramValues["para_naasra"] = this.Naasra85;
+        numModParamValues("para_naasra_increm", this.NaasraIncrement);
+        numModParamValues("para_naasra", this.Naasra85);
 
-        paramValues["para_sdi"] = this.SurfaceDistressIndex;
-        paramValues["para_pdi"] = this.PavementDistressIndex;
+        numModParamValues("para_sdi", this.SurfaceDistressIndex);
+        numModParamValues("para_pdi", this.PavementDistressIndex);
 
-        paramValues["para_obj_distress"] = this.ObjectiveDistress;
-        paramValues["para_obj_rsl"] = this.ObjectiveRemainingSurfaceLife;
-        paramValues["para_obj_rutting"] = this.ObjectiveRutting;
-        paramValues["para_obj_naasra"] = this._objectiveNaasra; 
-        paramValues["para_obj_o"] = this.ObjectiveValueRaw;
-        paramValues["para_obj"] = this.ObjectiveValue;
-        paramValues["para_obj_auc"] = this.ObjectiveAreaUnderCurve;
+        numModParamValues("para_obj_distress", this.ObjectiveDistress);
+        numModParamValues("para_obj_rsl", this.ObjectiveRemainingSurfaceLife);
+        numModParamValues("para_obj_rutting", this.ObjectiveRutting);
+        numModParamValues("para_obj_naasra", this._objectiveNaasra); 
+        numModParamValues("para_obj_o", this.ObjectiveValueRaw);
+        numModParamValues("para_obj", this.ObjectiveValue);
+        numModParamValues("para_obj_auc", this.ObjectiveAreaUnderCurve);
 
-        paramValues["para_maint_cost_perkm"] = this.MaintenanceCostPerKm;
-                
-        paramValues["para_csl_status"] = this.CandidateSelectionOutcome;
-        paramValues["para_csl_flag"] = this.IsCandidateForTreatment;
+        numModParamValues("para_maint_cost_perkm", this.MaintenanceCostPerKm);
 
-        paramValues["para_is_treated_flag"] = this.IsTreated; // Defaults to false initially
-        paramValues["para_treat_count"] = this.TreatmentCount; // Defaults to 0 initially
+        textModParamValues("para_csl_status", this.CandidateSelectionOutcome);
+        numModParamValues("para_csl_flag", this.IsCandidateForTreatment);
+
+        numModParamValues("para_is_treated_flag", Convert.ToDouble(this.IsTreated)); // Defaults to false initially
+        numModParamValues("para_treat_count", this.TreatmentCount); // Defaults to 0 initially
 
         // The following are Network Parameters - to be set automatically by the framework model:
         //para_pdi_rank
         //para_rut_rank
         //para_sdi_rank
         //para_sla_rank
-
-        return paramValues;
     }
 
     #endregion

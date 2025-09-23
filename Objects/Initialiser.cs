@@ -23,7 +23,7 @@ public class Initialiser
         _domainModel = domainModel ?? throw new ArgumentNullException(nameof(domainModel), "Domain model cannot be null");
     }
 
-    public RoadSegment InitialiseSegment(string[] rawRow, int iElemIndex)
+    public RoadSegment InitialiseSegment(int iElemIndex)
     {
 
         if (iElemIndex == 8426)
@@ -32,7 +32,7 @@ public class Initialiser
         }
 
         // Create a new RoadSegment object based purely on the raw data provided in the string array.
-        RoadSegment segment = RoadSegmentFactory.GetFromRawData(_frameworkModel, rawRow, iElemIndex);
+        RoadSegment segment = RoadSegmentFactory.GetFromRawData(_frameworkModel, iElemIndex);
 
         // Now do checks on the values and handle any anomalous data
 
