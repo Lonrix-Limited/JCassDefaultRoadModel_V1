@@ -1,19 +1,4 @@
-﻿using DocumentFormat.OpenXml.Presentation;
-using DocumentFormat.OpenXml.Wordprocessing;
-using JCass_Economics.Utilities;
-using MathNet.Numerics.LinearAlgebra;
-using NPOI.SS.Formula.Functions;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.Metrics;
-using System.Linq;
-using System.Runtime.Intrinsics.Arm;
-using System.Runtime.Intrinsics.X86;
-using System.Text;
-using System.Threading.Tasks;
-using static NPOI.HSSF.Util.HSSFColor;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
+﻿
 namespace JCassDefaultRoadModel.Objects;
 
 /// <summary>

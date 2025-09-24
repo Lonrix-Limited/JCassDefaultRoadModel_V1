@@ -1,26 +1,5 @@
-﻿using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Office2013.Excel;
-using DocumentFormat.OpenXml.Presentation;
-using DocumentFormat.OpenXml.Wordprocessing;
-using JCass_Core.Engineering;
-using JCass_Functions.Engineering;
-using JCass_ModelCore.DomainModels;
+﻿using JCass_Functions.Engineering;
 using JCass_ModelCore.Models;
-using JCass_ModelCore.Treatments;
-using MathNet.Numerics.Integration;
-using MathNet.Numerics.LinearAlgebra;
-using NPOI.HSSF.Record.CF;
-using NPOI.SS.Formula.Functions;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.Intrinsics.X86;
-using System.Text;
-using System.Threading.Tasks;
-using static NPOI.HSSF.Util.HSSFColor;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace JCassDefaultRoadModel.Objects;
 
