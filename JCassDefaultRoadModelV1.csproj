@@ -7,7 +7,7 @@
   </PropertyGroup>
 
 	<Target Name="CustomCopyDll" AfterTargets="Build">
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Users\fritz\Juno Services Dropbox\Local_Authorities\Christchurch CC\2025\cassandra\domain_model\" SkipUnchangedFiles="true" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\Users\fritz\Juno Services Dropbox\local_authorities\Hutt_City (Lower Hutt)\2025_26\cassandra\domain_model\" SkipUnchangedFiles="true" />
 		<!--<Copy SourceFiles="$(TargetPath)" DestinationFolder="C:\zz_trash\cass_new\cassandra\domain_model\" SkipUnchangedFiles="true" />-->
 	</Target>
 
