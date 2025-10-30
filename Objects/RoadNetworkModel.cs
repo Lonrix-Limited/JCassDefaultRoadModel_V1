@@ -1,6 +1,7 @@
 ﻿
 using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Treatments;
+using JCassDefaultRoadModelV1.Objects;
 
 namespace JCassDefaultRoadModel.Objects;
 
@@ -19,6 +20,8 @@ public class RoadNetworkModel : DomainModelBase
     public MeshCrackModel MeshCrackModel;
     public ShovingModel ShovingModel;
     public PotholeModel PotholeModel;
+
+    public Dictionary<string, TreatmentStrategy> CandidateStrategies;
 
     public RoadNetworkModel()
     {
@@ -208,7 +211,14 @@ public class RoadNetworkModel : DomainModelBase
         Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
         Dictionary<string, double> numModParamValues, Dictionary<string, string> textModParamValues)
     {
-        throw new NotImplementedException();
+        Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, null);
+
+        RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numModParamValues, textModParamValues, iElemIndex, iPeriod);
+
+        StrategyGenerator strategyGenerator = new StrategyGenerator(this.model, this);
+        var strategies = strategyGenerator.GetCandidateStrategies(segment, iPeriod, infoFromModel, numInputs, textInputs, numModParamValues, textModParamValues);
+        return strategies;
+
     }
 
     /// <summary>
