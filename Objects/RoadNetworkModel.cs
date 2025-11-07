@@ -123,10 +123,13 @@ public class RoadNetworkModel : DomainModelBase
     /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
     /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
     /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
+    /// <param name="currentNumModParamValues">Values for Numeric Model Parameters as they were in the previous epoch. Keys are parameter names</param>
+    /// <param name="currentTextModParamValues">Values for Text Model Parameters as they were at the previous epoch. Keys are parameter names</param>
     /// <param name="numModParamValues">Return value: Sink holding values for numeric parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>
     /// <param name="textModParamValues">Return value: Sink holding values for text parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>        
     public override void Reset(TreatmentInstance treatment, int iElemIndex, int iPeriod,
         Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
+        Dictionary<string, double> currentNumModParamValues, Dictionary<string, string> currentTextModParamValues,
         Action<string, double> numModParamValues, Action<string, string> textModParamValues)
     {
         try
@@ -136,11 +139,11 @@ public class RoadNetworkModel : DomainModelBase
                 int kk = 9;
             }
             
-            var (numPrevValues, textPrevValues) = model.GetParameterValues(iElemIndex, iPeriod - 1);
+            //var (numPrevValues, textPrevValues) = model.GetParameterValues(iElemIndex, iPeriod - 1);
 
             Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, treatment);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numPrevValues, textPrevValues, iElemIndex, iPeriod);
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, currentNumModParamValues, currentTextModParamValues, iElemIndex, iPeriod);
                        
 
             // Apply Resets
@@ -164,9 +167,12 @@ public class RoadNetworkModel : DomainModelBase
     /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
     /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
     /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
+    /// <param name="currentNumModParamValues">Values for Numeric Model Parameters as they were in the previous epoch. Keys are parameter names</param>
+    /// <param name="currentTextModParamValues">Values for Text Model Parameters as they were at the previous epoch. Keys are parameter names</param>
     /// <param name="numModParamValues">Return value: Sink holding values for numeric parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>
     /// <param name="textModParamValues">Return value: Sink holding values for text parameters (to be updated by Domain Model). Keys are parameter names, values are assigned values</param>        
     public override void Increment(int iElemIndex, int iPeriod, Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
+        Dictionary<string, double> currentNumModParamValues, Dictionary<string, string> currentTextModParamValues,
         Action<string, double> numModParamValues, Action<string, string> textModParamValues)
     {
         try
@@ -176,11 +182,11 @@ public class RoadNetworkModel : DomainModelBase
                 int kk = 9;
             }
 
-            var (numPrevValues, textPrevValues) = model.GetParameterValues(iElemIndex, iPeriod - 1);
+            //var (numPrevValues, textPrevValues) = model.GetParameterValues(iElemIndex, iPeriod - 1);
 
             Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, null);
 
-            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numPrevValues, textPrevValues, iElemIndex, iPeriod);
+            RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, currentNumModParamValues, currentTextModParamValues, iElemIndex, iPeriod);
             
             // Apply increments here
             RoadSegment incrementedSegment = _incrementer.Increment(segment, iPeriod);

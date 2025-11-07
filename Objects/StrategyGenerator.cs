@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Wordprocessing;
 using JCass_ModelCore.Models;
 using JCass_ModelCore.Treatments;
 using JCassDefaultRoadModel.Objects;
@@ -30,32 +32,57 @@ public class StrategyGenerator
         {
             List<TreatmentStrategy> strategies = new List<TreatmentStrategy>();
 
+            // Check if the segment passes the Candidate Selection checks. If not, return an empty list.
+            if (segment.IsCandidateForTreatment == 0) return strategies;
+
+            // Although we check if Periods to Next Treatment (i.e. committed) in the Candidate Selection, we need to do it 
+            // again here, because the Candidate Selection result was last evaluated at the last epoch, while the periods to
+            // next treatment have now changed since the period has changed
+            int periodsToNextTreatment = Convert.ToInt32(infoFromModel["periods_to_next_treatment"]);
+            if (periodsToNextTreatment <= 6) { return strategies; }
+
             foreach (var strategySetup in _frameworkModel.StrategiesSetupData)
             {
                 if (this.MustTriggerStrategy(strategySetup, segment) == true)
                 {
 
-                    TreatmentStrategy strategy = new TreatmentStrategy(segment.ElementIndex,numInputs,textInputs,numModParamValues,textModParamValues,period);
+                    TreatmentStrategy strategy = new TreatmentStrategy(segment.ElementIndex, numInputs, textInputs, numModParamValues, textModParamValues, period);
 
-                    strategy.AddFirstTreatment(strategySetup.FirstTreatment, segment.AreaSquareMetre, "no comment", "no reason", strategySetup.ForceFirstTreatment);
+                    TreatmentInstance firstTreatment = new TreatmentInstance(segment.ElementIndex, strategySetup.FirstTreatment, period,
+                            segment.AreaSquareMetre, strategySetup.ForceFirstTreatment, "no comment", "no reason");
+                    strategy.AddFirstTreatment(firstTreatment);
 
                     if (strategySetup.Treat2Name != string.Empty)
                     {
-                        strategy.AddFollowUpTreatment(strategySetup.Treat2Name, strategySetup.Treat2WaitPeriod, segment.AreaSquareMetre, "no comment", "no reason", strategySetup.Treat2Force);
+                        //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
+                        TreatmentInstance followUpTreatment1 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat2Name, strategySetup.Treat2WaitPeriod, 
+                            segment.AreaSquareMetre, strategySetup.Treat2Force, "no comment", "no reason");
+                        strategy.AddFollowUpTreatment(followUpTreatment1, strategySetup.Treat2WaitPeriod);
                     }
 
                     if (strategySetup.Treat3Name != string.Empty)
                     {
-                        strategy.AddFollowUpTreatment(strategySetup.Treat3Name, strategySetup.Treat3WaitPeriod, segment.AreaSquareMetre, "no comment", "no reason", strategySetup.Treat3Force);
+                        //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
+                        TreatmentInstance followUpTreatment2 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat3Name, strategySetup.Treat3WaitPeriod,
+                            segment.AreaSquareMetre, strategySetup.Treat2Force, "no comment", "no reason");
+                        strategy.AddFollowUpTreatment(followUpTreatment2, strategySetup.Treat3WaitPeriod);
                     }
 
                     if (strategySetup.Treat4Name != string.Empty)
-                    {
-                        strategy.AddFollowUpTreatment(strategySetup.Treat4Name, strategySetup.Treat4WaitPeriod, segment.AreaSquareMetre, "no comment", "no reason", strategySetup.Treat4Force);
+                    {                        
+                        //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
+                        TreatmentInstance followUpTreatment3 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat4Name, strategySetup.Treat4WaitPeriod,
+                            segment.AreaSquareMetre, strategySetup.Treat2Force, "no comment", "no reason");
+                        strategy.AddFollowUpTreatment(followUpTreatment3, strategySetup.Treat4WaitPeriod);
                     }
 
                     strategies.Add(strategy);
 
+                    // if the first treatment is forced, then do not add any more strategies
+                    if (strategySetup.ForceFirstTreatment == true)
+                    {
+                        break;
+                    }
                 }
             }
 
@@ -70,6 +97,34 @@ public class StrategyGenerator
     private bool MustTriggerStrategy(StrategySetupInfo strategySetupInfo, RoadSegment segment)
     {
         string firstTreatment = strategySetupInfo.FirstTreatment.ToLower();
+
+        // If first treatment is a Second Coat and Surface Function is NOT "1" then do not trigger strategy
+        if (firstTreatment == "chipseal_s" && segment.SurfaceFunction != "1")
+        {
+            return false;
+        }
+
+        if (firstTreatment == "chipseal_h" && segment.SurfaceFunction != "1a")
+        {
+            return false;
+        }
+        else
+        {
+            if (firstTreatment == "chipseal_h" && segment.SurfaceFunction == "1a")
+            {
+                int kk = 0;
+            }            
+        }
+
+        // TODO: Get clarify on surface class names used for Block and Concrete repairs and simplify this logic
+        // If the surface class is CS or AC, we cannot do blockrep, concrep, or xtreat      
+        if (segment.SurfaceClass == "cs" || segment.SurfaceClass == "ac")
+        {
+            List<string> otherTreatments = new List<string>() { "blockrep", "concrep", "xtreat" };
+            if (otherTreatments.Contains(firstTreatment)) return false;
+        }
+
+
         if (firstTreatment.Contains("seal") && segment.NextSurfaceIsChipSeal == false)
         {
             // We need an AC, so cannot do a seal
