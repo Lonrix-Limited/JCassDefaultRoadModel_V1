@@ -32,6 +32,11 @@ public class StrategyGenerator
         {
             List<TreatmentStrategy> strategies = new List<TreatmentStrategy>();
 
+            if (segment.ElementIndex == 522 && period >= 0)
+            {
+                int debug = 0;
+            }
+
             // Check if the segment passes the Candidate Selection checks. If not, return an empty list.
             if (segment.IsCandidateForTreatment == 0) return strategies;
 
@@ -41,56 +46,70 @@ public class StrategyGenerator
             int periodsToNextTreatment = Convert.ToInt32(infoFromModel["periods_to_next_treatment"]);
             if (periodsToNextTreatment <= 6) { return strategies; }
 
+            int istrat = 0;
             foreach (var strategySetup in _frameworkModel.StrategiesSetupData)
             {
-                if (this.MustTriggerStrategy(strategySetup, segment) == true)
+                if( istrat == 41)
                 {
-
-                    TreatmentStrategy strategy = new TreatmentStrategy(segment.ElementIndex, numInputs, textInputs, numModParamValues, textModParamValues, period);
-
-                    TreatmentInstance firstTreatment = new TreatmentInstance(segment.ElementIndex, strategySetup.FirstTreatment, period,
-                            segment.AreaSquareMetre, strategySetup.ForceFirstTreatment, "no comment", "no reason");
-                    strategy.AddFirstTreatment(firstTreatment);
-
-                    if (strategySetup.Treat2Name != string.Empty)
-                    {
-                        //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
-                        TreatmentInstance followUpTreatment1 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat2Name, strategySetup.Treat2WaitPeriod, 
-                            segment.AreaSquareMetre, strategySetup.Treat2Force, "no comment", "no reason");
-                        strategy.AddFollowUpTreatment(followUpTreatment1, strategySetup.Treat2WaitPeriod);
-                    }
-
-                    if (strategySetup.Treat3Name != string.Empty)
-                    {
-                        //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
-                        TreatmentInstance followUpTreatment2 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat3Name, strategySetup.Treat3WaitPeriod,
-                            segment.AreaSquareMetre, strategySetup.Treat2Force, "no comment", "no reason");
-                        strategy.AddFollowUpTreatment(followUpTreatment2, strategySetup.Treat3WaitPeriod);
-                    }
-
-                    if (strategySetup.Treat4Name != string.Empty)
-                    {                        
-                        //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
-                        TreatmentInstance followUpTreatment3 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat4Name, strategySetup.Treat4WaitPeriod,
-                            segment.AreaSquareMetre, strategySetup.Treat2Force, "no comment", "no reason");
-                        strategy.AddFollowUpTreatment(followUpTreatment3, strategySetup.Treat4WaitPeriod);
-                    }
-
-                    strategies.Add(strategy);
-
-                    // if the first treatment is forced, then do not add any more strategies
-                    if (strategySetup.ForceFirstTreatment == true)
-                    {
-                        break;
-                    }
+                    int debug = 0;
                 }
+                try
+                {
+                    if (this.MustTriggerStrategy(strategySetup, segment) == true)
+                    {
+
+                        TreatmentStrategy strategy = new TreatmentStrategy(segment.ElementIndex, strategySetup.StrategyName, numInputs, textInputs, numModParamValues, textModParamValues, period);
+                        strategy.Key = strategySetup.StrategyName;
+
+                        TreatmentInstance firstTreatment = new TreatmentInstance(segment.ElementIndex, strategySetup.FirstTreatment, period,
+                                segment.AreaSquareMetre, strategySetup.ForceFirstTreatment, "no comment", "no reason");
+                        strategy.AddFirstTreatment(firstTreatment);
+
+                        if (strategySetup.Treat2Name != string.Empty)
+                        {
+                            //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
+                            TreatmentInstance followUpTreatment2 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat2Name, strategySetup.Treat2WaitPeriod,
+                                segment.AreaSquareMetre, strategySetup.Treat2Force, "no comment", "no reason");
+                            strategy.AddFollowUpTreatment(followUpTreatment2, strategySetup.Treat2WaitPeriod);
+                        }
+
+                        if (strategySetup.Treat3Name != string.Empty)
+                        {
+                            //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
+                            TreatmentInstance followUpTreatment3 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat3Name, strategySetup.Treat3WaitPeriod,
+                                segment.AreaSquareMetre, strategySetup.Treat3Force, "no comment", "no reason");
+                            strategy.AddFollowUpTreatment(followUpTreatment3, strategySetup.Treat3WaitPeriod);
+                        }
+
+                        if (strategySetup.Treat4Name != string.Empty)
+                        {
+                            //Note: Wait period will be automatically adjusted by adding 1 to the wait period - because the first treatment is done in the current period
+                            TreatmentInstance followUpTreatment4 = new TreatmentInstance(segment.ElementIndex, strategySetup.Treat4Name, strategySetup.Treat4WaitPeriod,
+                                segment.AreaSquareMetre, strategySetup.Treat4Force, "no comment", "no reason");
+                            strategy.AddFollowUpTreatment(followUpTreatment4, strategySetup.Treat4WaitPeriod);
+                        }
+
+                        strategies.Add(strategy);
+
+                        // if the first treatment is forced, then do not add any more strategies
+                        if (strategySetup.ForceFirstTreatment == true)
+                        {
+                            break;
+                        }
+                    }
+                    istrat++;
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Error setting up strategy for '{strategySetup.StrategyName}'; Details: {ex.Message}");
+                }                
             }
 
             return strategies;
         }
         catch (Exception ex)
         {
-            throw new ApplicationException($"Error generating candidate strategies for segment {segment.FeebackCode} in period {period}", ex);            
+            throw new Exception($"Error generating candidate strategies for segment {segment.FeebackCode} in period {period}; Details: {ex.Message}");             
         }        
     }
 

@@ -211,6 +211,7 @@ public class Initialiser
         double surfAgeSafe = segment.SurfaceAge + 0.1; // Ensure surface age is not zero to avoid division by zero errors
         double rutIncrementEstimate = rutAfterSettlement/ surfAgeSafe;
 
+        //TODO: Make the min and max values configurable in lookups
         return Math.Clamp(rutIncrementEstimate, 0.05, 1.5);
 
     }
@@ -287,6 +288,7 @@ public class Initialiser
         double surfAgeSafe = segment.SurfaceAge + 0.1; // Ensure surface age is not zero to avoid division by zero errors
         double incrementEstimate = naasrafterSettlement / surfAgeSafe;
 
+        //TODO: Make the min and max values configurable in lookups
         return Math.Clamp(incrementEstimate, 0.2, 1.5);
 
     }
