@@ -1,7 +1,6 @@
 ﻿
 using JCass_ModelCore.DomainModels;
 using JCass_ModelCore.Treatments;
-using JCassDefaultRoadModelV1.Objects;
 
 namespace JCassDefaultRoadModel.Objects;
 
@@ -201,32 +200,7 @@ public class RoadNetworkModel : DomainModelBase
         }
     }
 
-    /// <summary>
-    /// Get alll stategies that can be considered for this element in the Benefit-Cost Analysis model. This method is called from
-    /// the Framwework Model only if the model type is Benefit-Cost Analysis (BCA). The strategies returned by this method will be 
-    /// evaluated over the look-ahead period and then combined with stategies for all other elements in the optimisation stage.
-    /// </summary>
-    /// <param name="iElemIndex">Zero-based index of the element</param>
-    /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
-    /// <param name="numInputs">Raw numeric input values for the element. Keys are input names, values are input values</param>
-    /// <param name="textInputs">Raw text input values for the element. Keys are input names, values are input values</param>
-    /// <param name="numModParamValues">Values for Numeric Model Parameters as they were in the previous epoch. Keys are parameter names</param>
-    /// <param name="textModParamValues">Values for Text Model Parameters as they were at the previous epoch. Keys are parameter names</param>
-    /// <returns>List of Treatment Strategies to consider for this element</returns>
-    public override List<TreatmentStrategy> GetStrategies(int iElemIndex, int iPeriod,
-        Dictionary<string, double> numInputs, Dictionary<string, string> textInputs,
-        Dictionary<string, double> numModParamValues, Dictionary<string, string> textModParamValues)
-    {
-        Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, null);
-
-        RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numModParamValues, textModParamValues, iElemIndex, iPeriod);
-
-        StrategyGenerator strategyGenerator = new StrategyGenerator(this.model, this);
-        var strategies = strategyGenerator.GetCandidateStrategies(segment, iPeriod, infoFromModel, numInputs, textInputs, numModParamValues, textModParamValues);
-        return strategies;
-
-    }
-
+    
     /// <summary>
     /// Execute treatment selection/trigger logic to select all treatment instances for an element in the current period. The
     /// framework model will call this method for each element in and for each period. This method is only used in MCDA type models

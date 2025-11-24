@@ -14,6 +14,7 @@
 	<ItemGroup>
 	  <Compile Remove="Objects\CandidateSelectorV0.cs" />
 	  <Compile Remove="Objects\SCurveDistress - Copy.cs" />
+	  <Compile Remove="Objects\StrategyGenerator.cs" />
 	  <Compile Remove="Objects\TreatmentsTriggerMCDA - Copy.cs" />
 	</ItemGroup>
 
