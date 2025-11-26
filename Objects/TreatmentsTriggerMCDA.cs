@@ -22,7 +22,7 @@ public class TreatmentsTriggerMCDA
 
     public List<TreatmentInstance> GetTriggeredTreatments(RoadSegment segment, int period, Dictionary<string, object> infoFromModel)
     {
-        if (segment.ElementIndex == 14 && period >= 11)
+        if (segment.ElementIndex == 3 && period == 13)
         {
             int kk = 0;
         }

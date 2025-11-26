@@ -221,7 +221,7 @@ public class RoadNetworkModel : DomainModelBase
     {
         try
         {
-            if (iElemIndex == 3035 && iPeriod > 6)
+            if (iElemIndex == 3 && iPeriod == 32)
             {
                 int kk = 0;
             }
