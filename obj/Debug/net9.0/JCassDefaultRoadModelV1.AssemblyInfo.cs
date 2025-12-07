@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("JCassDefaultRoadModelV1")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+1c7292e51422a537bb90923c6e57ee03940ff903")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+78a1b901e008c93f52c5a9dfeb08e80d20661d1c")]
 [assembly: System.Reflection.AssemblyProductAttribute("JCassDefaultRoadModelV1")]
 [assembly: System.Reflection.AssemblyTitleAttribute("JCassDefaultRoadModelV1")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

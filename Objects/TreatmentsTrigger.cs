@@ -7,14 +7,14 @@ using JCass_ModelCore.Treatments;
 namespace JCassDefaultRoadModel.Objects;
 
 /// <summary>
-/// Class for checking treatments triggering for a MCDA (Multi-Criteria Decision Analysis) model
+/// Class for checking treatments triggering 
 /// </summary>
-public class TreatmentsTriggerMCDA
+public class TreatmentsTrigger
 {
     private ModelBase _frameworkModel;
     private RoadNetworkModel _domainModel;
 
-    public TreatmentsTriggerMCDA(ModelBase frameworkModel, RoadNetworkModel domainModel)
+    public TreatmentsTrigger(ModelBase frameworkModel, RoadNetworkModel domainModel)
     {
         _frameworkModel = frameworkModel ?? throw new ArgumentNullException(nameof(frameworkModel), "Domain model cannot be null");
         _domainModel = domainModel ?? throw new ArgumentNullException(nameof(domainModel), "Domain model cannot be null");

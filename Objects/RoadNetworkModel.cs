@@ -230,7 +230,7 @@ public class RoadNetworkModel : DomainModelBase
 
             RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, numModParamValues, textModParamValues, iElemIndex, iPeriod);            
             
-            TreatmentsTriggerMCDA mcdaTriggerFunction = new TreatmentsTriggerMCDA(this.model, this);
+            TreatmentsTrigger mcdaTriggerFunction = new TreatmentsTrigger(this.model, this);
             List<TreatmentInstance> candidates = mcdaTriggerFunction.GetTriggeredTreatments(segment, iPeriod, infoFromModel);
 
             return candidates;
