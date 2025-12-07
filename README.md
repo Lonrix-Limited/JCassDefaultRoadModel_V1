@@ -10,7 +10,13 @@
  This model (V1) is a clone of the BASE model, but with some improvements to
  simplify some complex logic and get better consistency in coding convetions.
 
- ## List of Key Changes
+ ## This Release
+
+ The latests version (commit '1.6.70') needs to be compiled and used with Juno Cassandra Ver 1.6.70 or later. This
+ version has a modified Interface for the Domain Model to facilitate automatic generation of Strategies for the 
+ Benefit-Cost Analysis (BCA) model.
+
+ ## List of Key Changes from JFunction Model
 
  ### S-Curve Setup
 
