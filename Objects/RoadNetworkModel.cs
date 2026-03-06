@@ -272,5 +272,19 @@ public class RoadNetworkModel : DomainModelBase
             throw new Exception($"Error triggering Routine Maintenance on element index {iElemIndex}. Details: {ex.Message}");
         }
     }
-   
+
+    /// <summary>
+    /// Stub for the Domain Model that can be used to perform any end of period calculations after the treatment selection and parameter updates have 
+    /// been performed for all elements in the current period. This can be used to calculate any additional parameters that are needed for the next period 
+    /// or for reporting purposes, using the updated parameter values after treatment application. This method is called from the Framework Model at the end of 
+    /// each period, after all elements have been processed for the current period. You can use this to do things such as calculating network level rankings, statistics,
+    /// proportions over/under etc. that can be used to drive decisions in the next period. Implementers should store calculated values in the Domain Model object. Take
+    /// care on how you index or store results. Inless you index by period, your values will be replaced/recycled at the end of each period.
+    /// </summary>    
+    /// <param name="iPeriod">Modelling period (values like 1,2,...n)</param>
+    public override void DoEndOfPeriodCalculations(int iPeriod)
+    {
+        //Nothing to do here in the default model, but you can use this to do things such as calculating network level rankings, statistics,
+    }
+
 }
