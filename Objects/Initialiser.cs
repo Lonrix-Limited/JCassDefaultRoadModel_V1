@@ -76,7 +76,7 @@ public class Initialiser
     {
         try
         {
-            DateTime pavDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.PavementDateString);
+            DateTime pavDate = JCass_Core.Utils.HelperMethods.ParseISODateNoTime(segment.PavementDateString);
             double age = (_domainModel.Constants.BaseDate - pavDate).TotalDays / 365.25; // Use 365.25 to account for leap years
             
             // To duplicate jFunction setup, we must round age to 2 decimals
@@ -98,7 +98,7 @@ public class Initialiser
     {
         try
         {
-            DateTime surfDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.SurfacingDateString);
+            DateTime surfDate = JCass_Core.Utils.HelperMethods.ParseISODateNoTime(segment.SurfacingDateString);
             double age = (_domainModel.Constants.BaseDate - surfDate).TotalDays / 365.25; // Use 365.25 to account for leap years
 
             // To duplicate jFunction setup, we must round age to 2 decimals
@@ -118,7 +118,7 @@ public class Initialiser
 
     private double GetRutSurveyAge(RoadSegment segment)
     {
-        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.RutSurveyDateString);
+        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseISODateNoTime(segment.RutSurveyDateString);
         double age = (_domainModel.Constants.BaseDate - surveyDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
         if (age < 0)
         {
@@ -129,7 +129,7 @@ public class Initialiser
 
     private double GetNaasraSurveyAge(RoadSegment segment)
     {
-        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.RoughnessSurveyDateString);
+        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseISODateNoTime(segment.RoughnessSurveyDateString);
         double age = (_domainModel.Constants.BaseDate - surveyDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
         if (age < 0)
         {

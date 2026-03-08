@@ -156,7 +156,7 @@ public abstract class SCurveDistress
     /// <exception cref="Exception">An exception is thrown if the surface class is not 'ac' or 'cs'</exception>
     public double GetInitialValue(RoadSegment segment, double currentValue, DateTime baseDate)
     {
-        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(segment.ConditionSurveyDateString);
+        DateTime surveyDate = JCass_Core.Utils.HelperMethods.ParseISODateNoTime(segment.ConditionSurveyDateString);
         double surveyAge = (baseDate - surveyDate).TotalDays / 365.25; // Use 365.25 to account for leap years        
         if (surveyAge < 0) 
         { 

@@ -252,7 +252,7 @@ public class Constants
 
     public Constants(Dictionary<string, Dictionary<string, object>> lookupSets)
     {        
-        _baseDate = JCass_Core.Utils.HelperMethods.ParseDateNoTime(lookupSets["general"]["base_date"]);
+        _baseDate = JCass_Core.Utils.HelperMethods.ParseISODateNoTime(lookupSets["general"]["base_date"].ToString());
         _shortTermPeriod = Convert.ToInt32(lookupSets["general"]["short_term_periods"]);
 
         // Candidate Selection related constants
