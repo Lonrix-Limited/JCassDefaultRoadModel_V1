@@ -1,5 +1,5 @@
 ﻿
-using JCass_Functions.Lookups;
+using JCass_Core.JFunctions;
 using JCass_ModelCore.Models;
 using JCass_ModelCore.Treatments;
 

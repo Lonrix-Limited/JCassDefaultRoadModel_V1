@@ -19,9 +19,15 @@
 	</ItemGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\..\..\Users\fritz\source\repos\jcass_jfunctions_project\JCass_Functions\JCass_Functions.csproj" />
-	  <ProjectReference Include="..\..\..\..\Users\fritz\source\repos\jcass_main\JCass_Core\JCass_Core.csproj" />
-	  <ProjectReference Include="..\..\..\..\Users\fritz\source\repos\jcass_main\JCass_ModelCore\JCass_ModelCore.csproj" />
+	  <Reference Include="JCass_Core">
+	    <HintPath>framework_dlls\JCass_Core.dll</HintPath>
+	  </Reference>
+	  <Reference Include="JCass_Data">
+	    <HintPath>framework_dlls\JCass_Data.dll</HintPath>
+	  </Reference>
+	  <Reference Include="JCass_ModelCore">
+	    <HintPath>framework_dlls\JCass_ModelCore.dll</HintPath>
+	  </Reference>
 	</ItemGroup>
 
 
