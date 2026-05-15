@@ -1,6 +1,6 @@
 # JCassDefaultRoadModel V1
 
- Updated Version for the Second Generation Default Road Network Model for Cassandra. 
+ Updated Version for the Second Generation Default Road Network Model for Cassandra **Winforms Desktop**. 
  This version is a clone of the BASE model (V0) repository. The BASE C# model 
  was largely aimed at getting a starting point that matches with the JFunction model.
 
@@ -9,6 +9,17 @@
 
  This model (V1) is a clone of the BASE model, but with some improvements to
  simplify some complex logic and get better consistency in coding convetions.
+
+ ## Later Versions
+
+ There is a new version (V2) of this model which is near-identical but with an interface suited for the
+ Juno Cassandra web-application. This version (V1) is not compatible with the web-application because
+ the structure of the domain model setup and configuration files has changed for the web version since
+ the web version does not use a WorkBench file.
+
+ In summary: Use this version (V1) if you are working with the Winforms Desktop version (now deprecated). Use
+ the next version (V2) if you are working in the Web application or in the Command Line Interface (CLI) desktop
+ version.
 
  ## This Release
 
