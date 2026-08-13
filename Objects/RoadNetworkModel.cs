@@ -138,8 +138,6 @@ public class RoadNetworkModel : DomainModelBase
                 int kk = 9;
             }
             
-            //var (numPrevValues, textPrevValues) = model.GetParameterValues(iElemIndex, iPeriod - 1);
-
             Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, treatment);
 
             RoadSegment segment = RoadSegmentFactory.GetFromModel(this.model, numInputs, textInputs, currentNumModParamValues, currentTextModParamValues, iElemIndex, iPeriod);
@@ -180,8 +178,6 @@ public class RoadNetworkModel : DomainModelBase
             {
                 int kk = 9;
             }
-
-            //var (numPrevValues, textPrevValues) = model.GetParameterValues(iElemIndex, iPeriod - 1);
 
             Dictionary<string, object> infoFromModel = model.GetSpecialPlaceholderValues(iElemIndex, iPeriod, null);
 
